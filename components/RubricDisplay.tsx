@@ -18,7 +18,7 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
     } else if (levelLower.includes('suficiente') || levelLower.includes('5')) {
       return 'bg-orange-500 text-white'; // Naranja
     } else if (levelLower.includes('insuficiente') || levelLower.includes('0-4') || levelLower.includes('0') || levelLower.includes('1') || levelLower.includes('2') || levelLower.includes('3') || levelLower.includes('4')) {
-      return 'bg-red-500 text-white'; // Rojo
+      return 'bg-red-600 text-white'; // Rojo
     }
     return 'bg-slate-100 text-slate-700'; // Color por defecto
   };
