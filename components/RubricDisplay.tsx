@@ -39,19 +39,21 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
     <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
       {/* Header con título y botones */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6">
-        <h2 className="text-2xl font-bold mb-2">{rubric.title}</h2>
-        <div className="flex gap-2 mt-4 no-print">
+        <h2 className="text-2xl font-bold mb-4">{rubric.title}</h2>
+        <div className="flex flex-wrap gap-3 mt-4 no-print">
           <button
             onClick={handlePrint}
-            className="px-4 py-2 bg-white text-blue-700 rounded-lg hover:bg-blue-50 font-semibold transition-colors"
+            className="flex items-center gap-2 px-6 py-3 bg-white text-blue-700 rounded-lg hover:bg-blue-50 font-semibold transition-all shadow-md hover:shadow-lg text-base"
           >
-            🖨️ Imprimir
+            <span className="text-xl">🖨️</span>
+            <span>Imprimir</span>
           </button>
           <button
             onClick={handleCopyText}
-            className="px-4 py-2 bg-white text-blue-700 rounded-lg hover:bg-blue-50 font-semibold transition-colors"
+            className="flex items-center gap-2 px-6 py-3 bg-white text-blue-700 rounded-lg hover:bg-blue-50 font-semibold transition-all shadow-md hover:shadow-lg text-base"
           >
-            📋 Copiar Texto
+            <span className="text-xl">📋</span>
+            <span>Copiar Texto</span>
           </button>
         </div>
       </div>
