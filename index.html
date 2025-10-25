@@ -11,18 +11,47 @@
       body {
         font-family: 'Poppins', sans-serif;
       }
+      
+      /* Estilos para impresión */
+      @media print {
+        /* Ocultar elementos con clase no-print */
+        .no-print {
+          display: none !important;
+        }
+        
+        /* Fondo blanco para impresión */
+        body {
+          background: white !important;
+          margin: 0;
+          padding: 15mm;
+        }
+        
+        /* Mantener colores en impresión */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        
+        /* Ajustar tabla para impresión */
+        table {
+          page-break-inside: auto;
+          font-size: 11pt;
+        }
+        
+        tr {
+          page-break-inside: avoid;
+          page-break-after: auto;
+        }
+        
+        /* Asegurar que solo se imprime el contenido principal */
+        #root > div > header,
+        #root > div > footer {
+          display: none !important;
+        }
+      }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0"
-  }
-}
-</script>
-</head>
+  </head>
   <body class="bg-slate-900 text-slate-200">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
