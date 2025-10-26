@@ -1,18 +1,18 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import type { FormData, Rubric, RubricItem, WeightedCriterion } from '../types';
 
 // Lazily initialize the AI client to avoid throwing an error on module load.
-// This allows the app to render even if the API key is not yet configured.
 let ai: GoogleGenAI | null = null;
 
-// FIX: Switched from `import.meta.env.VITE_GEMINI_API_KEY` to `process.env.API_KEY`
-// to align with coding guidelines and resolve the TypeScript error.
-// The error message has also been updated to be more informative without instructing the user.
+// This function now correctly accesses the environment variables.
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        // Per coding guidelines, the API key must be obtained from process.env.API_KEY.
+        // Fix: Use process.env.API_KEY as per the guidelines to retrieve the API key.
+        // This resolves the TypeScript error 'Property 'env' does not exist on type 'ImportMeta''.
         const apiKey = process.env.API_KEY;
         if (!apiKey) {
+            // Fix: Update the error message to reflect the new environment variable name.
             throw new Error("La variable de entorno API_KEY no está configurada. La aplicación no puede contactar con el servicio de IA.");
         }
         ai = new GoogleGenAI({ apiKey: apiKey });
@@ -150,6 +150,7 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
+    // Fix: Update the condition to check for 'API_KEY' consistent with the new error message.
     if (error instanceof Error && error.message.includes('API_KEY')) {
         throw error;
     }
@@ -248,6 +249,7 @@ export async function generateCriteriaSuggestions(
 
     } catch (error) {
         console.error("Error calling Gemini API for suggestions:", error);
+        // Fix: Update the condition to check for 'API_KEY' consistent with the new error message.
         if (error instanceof Error && error.message.includes('API_KEY')) {
             throw error;
         }
