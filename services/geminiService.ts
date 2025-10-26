@@ -5,15 +5,15 @@ import type { FormData, Rubric, RubricItem, WeightedCriterion } from '../types';
 // Lazily initialize the AI client to avoid throwing an error on module load.
 let ai: GoogleGenAI | null = null;
 
-// Reverted to Vite-compatible environment variables.
+// Fix: Use `import.meta.env.VITE_GEMINI_API_KEY` for Vite compatibility.
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        // Use import.meta.env for Vite projects.
+        // The API key is obtained from Vite's environment variables.
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
         if (!apiKey) {
-            // Updated error message to reference the correct Vite environment variable.
-            throw new Error("La variable de entorno VITE_GEMINI_API_KEY no está configurada. Por favor, configúrala en los ajustes de tu aplicación.");
+            // Updated error message to reference the correct environment variable.
+            throw new Error("La variable de entorno VITE_GEMINI_API_KEY no está configurada. Por favor, asegúrate de que esté disponible en tu archivo .env y que el servidor de desarrollo se haya reiniciado.");
         }
         ai = new GoogleGenAI({ apiKey });
     }
@@ -150,7 +150,7 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    // Reverted to check for Vite-specific API key error.
+    // Fix: Check for the correct API key error message for Vite.
     if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
         throw error;
     }
@@ -249,7 +249,7 @@ export async function generateCriteriaSuggestions(
 
     } catch (error) {
         console.error("Error calling Gemini API for suggestions:", error);
-        // Reverted to check for Vite-specific API key error.
+        // Fix: Check for the correct API key error message for Vite.
         if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
             throw error;
         }
