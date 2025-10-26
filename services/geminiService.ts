@@ -1,11 +1,19 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { FormData, Rubric, RubricItem, WeightedCriterion } from '../types';
 
-if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable not set");
-}
+// Lazily initialize the AI client to avoid throwing an error on module load.
+// This allows the app to render even if the API key is not yet configured.
+let ai: GoogleGenAI | null = null;
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+function getAiClient(): GoogleGenAI {
+    if (!ai) {
+        if (!process.env.API_KEY) {
+            throw new Error("La variable de entorno API_KEY no está configurada. Por favor, configúrala en los ajustes de tu aplicación.");
+        }
+        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    }
+    return ai;
+}
 
 export async function generateRubric(formData: FormData): Promise<Rubric> {
   const { stage, course, subject, evaluationElement, performanceLevels, specificCriteria, evaluationCriteria } = formData;
@@ -100,7 +108,8 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
 
 
   try {
-    const response = await ai.models.generateContent({
+    const aiClient = getAiClient();
+    const response = await aiClient.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
@@ -136,6 +145,9 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
+    if (error instanceof Error && error.message.includes('API_KEY')) {
+        throw error;
+    }
     throw new Error("No se pudo generar la rúbrica desde el servicio de IA.");
   }
 }
@@ -204,7 +216,8 @@ export async function generateCriteriaSuggestions(
     }
 
     try {
-        const response = await ai.models.generateContent({
+        const aiClient = getAiClient();
+        const response = await aiClient.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
             config: {
@@ -230,6 +243,9 @@ export async function generateCriteriaSuggestions(
 
     } catch (error) {
         console.error("Error calling Gemini API for suggestions:", error);
+        if (error instanceof Error && error.message.includes('API_KEY')) {
+            throw error;
+        }
         throw new Error("No se pudieron generar las sugerencias.");
     }
 }

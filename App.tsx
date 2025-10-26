@@ -20,7 +20,11 @@ const App: React.FC = () => {
       setRubric(result);
     } catch (err) {
       console.error(err);
-      setError('Hubo un error al generar la rúbrica. Por favor, inténtalo de nuevo.');
+      if (err instanceof Error && err.message.includes('API_KEY')) {
+        setError(err.message);
+      } else {
+        setError('Hubo un error al generar la rúbrica. Por favor, inténtalo de nuevo.');
+      }
     } finally {
       setIsLoading(false);
     }

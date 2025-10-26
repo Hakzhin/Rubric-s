@@ -45,7 +45,12 @@ const CriteriaSection: React.FC<CriteriaSectionProps> = ({ title, criteria, onCr
             const newSuggestions = suggestions.filter(s => !criteria.find(c => c.toLowerCase() === s.toLowerCase()));
             onCriteriaChange([...criteria, ...newSuggestions]);
         } catch (err) {
-            setError('Error al obtener sugerencias.');
+            console.error(err);
+            if (err instanceof Error && err.message.includes('API_KEY')) {
+                setError(err.message);
+            } else {
+                setError('Error al obtener sugerencias.');
+            }
         } finally {
             setIsSuggesting(false);
         }
@@ -141,7 +146,12 @@ export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading }) =
           
           setEvaluationCriteria([...evaluationCriteria, ...newSuggestions]);
       } catch (err) {
-          setSuggestionError('Error al obtener sugerencias.');
+          console.error(err);
+          if (err instanceof Error && err.message.includes('API_KEY')) {
+              setSuggestionError(err.message);
+          } else {
+              setSuggestionError('Error al obtener sugerencias.');
+          }
       } finally {
           setIsSuggesting(false);
       }
