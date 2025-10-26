@@ -1,23 +1,18 @@
 /// <reference types="vite/client" />
-
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { FormData, Rubric } from '../types';
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
 if (!apiKey) {
-  console.error('❌ GEMINI_API_KEY no está configurada');
+  throw new Error('API_KEY environment variable not set');
 }
 
-const genAI = new GoogleGenerativeAI(apiKey || '');
+const genAI = new GoogleGenerativeAI(apiKey);
 
 export async function generateRubric(formData: FormData): Promise<Rubric> {
-  if (!apiKey) {
-    throw new Error('La API key de Gemini no está configurada. Por favor, configúrala en las variables de entorno.');
-  }
-
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
+  
   const prompt = `
 Eres un experto en diseño de rúbricas de evaluación educativa basadas en la LOMLOE para el sistema educativo español.
 
