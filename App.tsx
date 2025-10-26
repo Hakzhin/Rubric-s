@@ -21,7 +21,7 @@ const App: React.FC = () => {
       setRubric(result);
     } catch (err) {
       console.error(err);
-      // Reverted the error check to look for the Vite-specific 'VITE_GEMINI_API_KEY' environment variable name.
+      // Reverted: Check for Vite-specific API key related errors.
       if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
         setError(err.message);
       } else {

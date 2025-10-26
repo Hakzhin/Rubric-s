@@ -5,14 +5,14 @@ import type { FormData, Rubric, RubricItem, WeightedCriterion } from '../types';
 // Lazily initialize the AI client to avoid throwing an error on module load.
 let ai: GoogleGenAI | null = null;
 
-// Reverted to Vite's environment variable as requested by the user.
+// Reverted to Vite-compatible environment variables.
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        // Access the environment variable using import.meta.env for Vite projects.
+        // Use import.meta.env for Vite projects.
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
         if (!apiKey) {
-            // Updated error message to reference the Vite-specific environment variable.
+            // Updated error message to reference the correct Vite environment variable.
             throw new Error("La variable de entorno VITE_GEMINI_API_KEY no está configurada. Por favor, configúrala en los ajustes de tu aplicación.");
         }
         ai = new GoogleGenAI({ apiKey });
@@ -150,7 +150,7 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    // Updated error message check to look for the Vite-specific variable name.
+    // Reverted to check for Vite-specific API key error.
     if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
         throw error;
     }
@@ -249,7 +249,7 @@ export async function generateCriteriaSuggestions(
 
     } catch (error) {
         console.error("Error calling Gemini API for suggestions:", error);
-        // Updated error message check to look for the Vite-specific variable name.
+        // Reverted to check for Vite-specific API key error.
         if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
             throw error;
         }
