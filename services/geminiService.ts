@@ -3,19 +3,19 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import type { FormData, Rubric, RubricItem } from "../types";
 
-// ✅ SOLO VITE_GEMINI_API_KEY (visible en el cliente)
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+// SOLO VITE_GEMINI_API_KEY (visible en el cliente)
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
 
 if (!apiKey) {
   console.error("❌ VITE_GEMINI_API_KEY no está configurada en el entorno.");
   throw new Error(
-    "La API key de Gemini no está configurada. Añádela al archivo .env como VITE_GEMINI_API_KEY."
+    "La API key de Gemini no está configurada. Añádela al archivo .env(.local) como VITE_GEMINI_API_KEY."
   );
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// 🔧 Utilidad: limpia texto con ```json o ``` y parsea de forma segura
+// Limpieza y parseo robusto del JSON por si viniera con fences ```json
 function safeParseJson(raw: string) {
   const cleaned = raw
     .replace(/^\uFEFF/, "")
@@ -40,7 +40,7 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
   const itemCount = itemNames.length;
 
   const prompt = `
-Eres experto en diseño de rúbricas educativas basadas en la LOMLOE. 
+Eres experto en diseño de rúbricas educativas basadas en la LOMLOE.
 Devuelve SOLO un JSON válido con esta estructura:
 
 {
@@ -62,44 +62,10 @@ Devuelve SOLO un JSON válido con esta estructura:
   "specificCriteria": ["Criterio específico 1", "Criterio específico 2"]
 }
 
-**Contexto:**
+Contexto:
 - Etapa: ${stage}
 - Curso: ${course}
 - Asignatura: ${subject}
 - Elemento de evaluación: ${evaluationElement}
 - Niveles de desempeño (ordenados): ${performanceLevels.join(", ")}
-- Criterios LOMLOE: ${specificCriteria.join("; ")}
-- Ítems (exactamente ${itemCount}): ${itemNames.join("; ")}
-- Pesos esperados: ${evaluationCriteria
-    .map((c) => `${c.name} (${c.weight}%)`)
-    .join("; ")}
-
-**Reglas:**
-1. Usa exactamente esos ítems y niveles.
-2. Las descripciones deben ser observables, medibles y progresivas.
-3. La suma total de los pesos debe ser 100%.
-4. No incluyas texto fuera del JSON.
-`;
-
-  const responseSchema = {
-    type: SchemaType.OBJECT,
-    properties: {
-      title: { type: SchemaType.STRING },
-      scaleHeaders: {
-        type: SchemaType.ARRAY,
-        items: {
-          type: SchemaType.OBJECT,
-          properties: {
-            level: { type: SchemaType.STRING },
-            score: { type: SchemaType.STRING },
-          },
-          required: ["level", "score"],
-        },
-      },
-      items: {
-        type: SchemaType.ARRAY,
-        items: {
-          type: SchemaType.OBJECT,
-          properties: {
-            itemName: { type: SchemaType.STRING },
-            weight: { type: SchemaType.NUMBE
+- Criterios LOMLOE
