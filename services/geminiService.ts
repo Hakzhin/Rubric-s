@@ -1,18 +1,17 @@
 
+
 import { GoogleGenAI, Type } from "@google/genai";
 import type { FormData, Rubric, RubricItem, WeightedCriterion } from '../types';
 
 // Lazily initialize the AI client to avoid throwing an error on module load.
 let ai: GoogleGenAI | null = null;
 
-// This function now correctly accesses the environment variables.
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        // Fix: Use process.env.API_KEY as per the guidelines to retrieve the API key.
-        // This resolves the TypeScript error 'Property 'env' does not exist on type 'ImportMeta''.
+        // Fix: Use process.env.API_KEY to retrieve the API key as per the guidelines.
         const apiKey = process.env.API_KEY;
         if (!apiKey) {
-            // Fix: Update the error message to reflect the new environment variable name.
+            // This error message now gives the correct variable name to check.
             throw new Error("La variable de entorno API_KEY no está configurada. La aplicación no puede contactar con el servicio de IA.");
         }
         ai = new GoogleGenAI({ apiKey: apiKey });
@@ -150,7 +149,6 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    // Fix: Update the condition to check for 'API_KEY' consistent with the new error message.
     if (error instanceof Error && error.message.includes('API_KEY')) {
         throw error;
     }
@@ -249,7 +247,6 @@ export async function generateCriteriaSuggestions(
 
     } catch (error) {
         console.error("Error calling Gemini API for suggestions:", error);
-        // Fix: Update the condition to check for 'API_KEY' consistent with the new error message.
         if (error instanceof Error && error.message.includes('API_KEY')) {
             throw error;
         }
