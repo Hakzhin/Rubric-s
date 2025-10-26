@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Header } from './components/Header';
 import { RubricForm } from './components/RubricForm';
@@ -20,8 +21,8 @@ const App: React.FC = () => {
       setRubric(result);
     } catch (err) {
       console.error(err);
-      // FIX: Updated the error message check to look for 'API_KEY' instead of 'VITE_GEMINI_API_KEY'.
-      if (err instanceof Error && err.message.includes('API_KEY')) {
+      // This now correctly checks for the Vite-specific environment variable error.
+      if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
         setError(err.message);
       } else {
         setError('Hubo un error al generar la rúbrica. Por favor, inténtalo de nuevo.');
