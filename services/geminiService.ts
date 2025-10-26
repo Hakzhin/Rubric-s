@@ -1,18 +1,19 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import type { FormData, Rubric, RubricItem, WeightedCriterion } from '../types';
 
 // Lazily initialize the AI client to avoid throwing an error on module load.
 let ai: GoogleGenAI | null = null;
 
-// Fix: Switched from Vite-specific 'import.meta.env' to 'process.env.API_KEY' to align with guidelines and resolve TypeScript errors.
+// Reverted to Vite's environment variable as requested by the user.
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        // Access the environment variable using the standard `process.env`.
-        const apiKey = process.env.API_KEY;
+        // Access the environment variable using import.meta.env for Vite projects.
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
         if (!apiKey) {
-            // Fix: Updated error message to reference the correct environment variable name, 'API_KEY'.
-            throw new Error("La variable de entorno API_KEY no está configurada. Por favor, configúrala en los ajustes de tu aplicación.");
+            // Updated error message to reference the Vite-specific environment variable.
+            throw new Error("La variable de entorno VITE_GEMINI_API_KEY no está configurada. Por favor, configúrala en los ajustes de tu aplicación.");
         }
         ai = new GoogleGenAI({ apiKey });
     }
@@ -149,8 +150,8 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    // Fix: Updated error message check to look for 'API_KEY' instead of 'VITE_GEMINI_API_KEY'.
-    if (error instanceof Error && error.message.includes('API_KEY')) {
+    // Updated error message check to look for the Vite-specific variable name.
+    if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
         throw error;
     }
     throw new Error("No se pudo generar la rúbrica desde el servicio de IA.");
@@ -248,8 +249,8 @@ export async function generateCriteriaSuggestions(
 
     } catch (error) {
         console.error("Error calling Gemini API for suggestions:", error);
-        // Fix: Updated error message check to look for 'API_KEY' instead of 'VITE_GEMINI_API_KEY'.
-        if (error instanceof Error && error.message.includes('API_KEY')) {
+        // Updated error message check to look for the Vite-specific variable name.
+        if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
             throw error;
         }
         throw new Error("No se pudieron generar las sugerencias.");
