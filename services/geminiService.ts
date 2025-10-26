@@ -1,22 +1,18 @@
-// Fix: Added a triple-slash directive to include Vite's client types, which defines `import.meta.env` for TypeScript.
-/// <reference types="vite/client" />
-
 import { GoogleGenAI, Type } from "@google/genai";
 import type { FormData, Rubric, RubricItem, WeightedCriterion } from '../types';
 
 // Lazily initialize the AI client to avoid throwing an error on module load.
 let ai: GoogleGenAI | null = null;
 
-// This is the definitive fix for Vite projects.
-// It uses `import.meta.env.VITE_GEMINI_API_KEY` to access the environment variable.
+// Fix: Switched from Vite-specific 'import.meta.env' to 'process.env.API_KEY' to align with guidelines and resolve TypeScript errors.
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        // Access the environment variable using Vite's syntax.
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        // Access the environment variable using the standard `process.env`.
+        const apiKey = process.env.API_KEY;
 
         if (!apiKey) {
-            // The error message guides the user to set the correct variable name (`VITE_GEMINI_API_KEY`).
-            throw new Error("La variable de entorno VITE_GEMINI_API_KEY no está configurada. Por favor, configúrala en los ajustes de tu aplicación.");
+            // Fix: Updated error message to reference the correct environment variable name, 'API_KEY'.
+            throw new Error("La variable de entorno API_KEY no está configurada. Por favor, configúrala en los ajustes de tu aplicación.");
         }
         ai = new GoogleGenAI({ apiKey });
     }
@@ -153,7 +149,8 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
+    // Fix: Updated error message check to look for 'API_KEY' instead of 'VITE_GEMINI_API_KEY'.
+    if (error instanceof Error && error.message.includes('API_KEY')) {
         throw error;
     }
     throw new Error("No se pudo generar la rúbrica desde el servicio de IA.");
@@ -251,7 +248,8 @@ export async function generateCriteriaSuggestions(
 
     } catch (error) {
         console.error("Error calling Gemini API for suggestions:", error);
-        if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
+        // Fix: Updated error message check to look for 'API_KEY' instead of 'VITE_GEMINI_API_KEY'.
+        if (error instanceof Error && error.message.includes('API_KEY')) {
             throw error;
         }
         throw new Error("No se pudieron generar las sugerencias.");
