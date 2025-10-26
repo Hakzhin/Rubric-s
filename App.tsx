@@ -20,6 +20,7 @@ const App: React.FC = () => {
       setRubric(result);
     } catch (err) {
       console.error(err);
+      // FIX: Updated the error message check to look for 'API_KEY' instead of 'VITE_GEMINI_API_KEY'.
       if (err instanceof Error && err.message.includes('API_KEY')) {
         setError(err.message);
       } else {

@@ -1,20 +1,18 @@
-
-
 import { GoogleGenAI, Type } from "@google/genai";
 import type { FormData, Rubric, RubricItem, WeightedCriterion } from '../types';
 
 // Lazily initialize the AI client to avoid throwing an error on module load.
 let ai: GoogleGenAI | null = null;
 
+// FIX: Switched from Vite-specific `import.meta.env` to standard `process.env.API_KEY` as per guidelines, which also resolves the TypeScript error.
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        // Fix: Use process.env.API_KEY to retrieve the API key as per the guidelines.
         const apiKey = process.env.API_KEY;
         if (!apiKey) {
-            // This error message now gives the correct variable name to check.
-            throw new Error("La variable de entorno API_KEY no está configurada. La aplicación no puede contactar con el servicio de IA.");
+            // This error message now guides the user to set the correct variable name.
+            throw new Error("La variable de entorno API_KEY no está configurada. Por favor, configúrala en los ajustes de tu aplicación.");
         }
-        ai = new GoogleGenAI({ apiKey: apiKey });
+        ai = new GoogleGenAI({ apiKey });
     }
     return ai;
 }
@@ -149,6 +147,7 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
+    // FIX: Updated the error message check to look for 'API_KEY' instead of 'VITE_GEMINI_API_KEY'.
     if (error instanceof Error && error.message.includes('API_KEY')) {
         throw error;
     }
@@ -247,6 +246,7 @@ export async function generateCriteriaSuggestions(
 
     } catch (error) {
         console.error("Error calling Gemini API for suggestions:", error);
+        // FIX: Updated the error message check to look for 'API_KEY' instead of 'VITE_GEMINI_API_KEY'.
         if (error instanceof Error && error.message.includes('API_KEY')) {
             throw error;
         }

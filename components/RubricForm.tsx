@@ -46,6 +46,7 @@ const CriteriaSection: React.FC<CriteriaSectionProps> = ({ title, criteria, onCr
             onCriteriaChange([...criteria, ...newSuggestions]);
         } catch (err) {
             console.error(err);
+            // FIX: Updated the error message check to look for 'API_KEY' instead of 'VITE_GEMINI_API_KEY'.
             if (err instanceof Error && err.message.includes('API_KEY')) {
                 setError(err.message);
             } else {
@@ -147,6 +148,7 @@ export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading }) =
           setEvaluationCriteria([...evaluationCriteria, ...newSuggestions]);
       } catch (err) {
           console.error(err);
+          // FIX: Updated the error message check to look for 'API_KEY' instead of 'VITE_GEMINI_API_KEY'.
           if (err instanceof Error && err.message.includes('API_KEY')) {
               setSuggestionError(err.message);
           } else {
