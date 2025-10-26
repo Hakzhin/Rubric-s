@@ -85,3 +85,19 @@ Genera SOLO el JSON válido, sin texto adicional antes o después.
     throw new Error('No se pudo generar la rúbrica. Por favor, verifica tu conexión y la API key.');
   }
 }
+
+export async function generateCriteriaSuggestions(
+  stage: string,
+  course: string,
+  subject: string,
+  evaluationElement: string
+): Promise<string[]> {
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  
+  const prompt = `
+Eres un experto en evaluación educativa basada en la LOMLOE para el sistema educativo español.
+
+Genera una lista de 5-8 criterios de evaluación específicos y concretos para:
+- Etapa educativa: ${stage}
+- Curso: ${course}
+-
