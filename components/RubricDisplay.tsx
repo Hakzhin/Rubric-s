@@ -6,6 +6,23 @@ interface RubricDisplayProps {
 }
 
 export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
+  // Función para determinar el color según el nivel
+  const getColorForLevel = (level: string): string => {
+    const levelLower = level.toLowerCase();
+    if (levelLower.includes('sobresaliente') || levelLower.includes('9-10') || levelLower.includes('9') || levelLower.includes('10')) {
+      return 'bg-lime-500 text-white'; // Verde lima oscuro
+    } else if (levelLower.includes('notable') || levelLower.includes('7-8') || levelLower.includes('7') || levelLower.includes('8')) {
+      return 'bg-green-400 text-white'; // Verde claro
+    } else if (levelLower.includes('bien') || levelLower.includes('6')) {
+      return 'bg-yellow-400 text-gray-900'; // Amarillo
+    } else if (levelLower.includes('suficiente') || levelLower.includes('5')) {
+      return 'bg-orange-500 text-white'; // Naranja
+    } else if (levelLower.includes('insuficiente') || levelLower.includes('0-4') || levelLower.includes('0') || levelLower.includes('1') || levelLower.includes('2') || levelLower.includes('3') || levelLower.includes('4')) {
+      return 'bg-red-600 text-white'; // Rojo
+    }
+    return 'bg-slate-100 text-slate-700'; // Color por defecto
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -62,17 +79,17 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-slate-100">
-              <th className="border border-slate-300 px-4 py-3 text-left font-semibold text-slate-700">
-                Criterio / Ponderación
+            <tr>
+              <th className="border border-slate-300 px-4 py-3 text-left font-semibold text-slate-700 bg-slate-100">
+                Ítem de Evaluación
               </th>
               {rubric.scaleHeaders.map((header, index) => (
                 <th
                   key={index}
-                  className="border border-slate-300 px-4 py-3 text-center font-semibold text-slate-700"
+                  className={`border border-slate-300 px-4 py-3 text-center font-semibold ${getColorForLevel(header.level)}`}
                 >
-                  <div>{header.level}</div>
-                  <div className="text-sm font-normal text-slate-600">({header.score} pts)</div>
+                  <div className="font-bold uppercase text-sm">{header.level}</div>
+                  <div className="text-base font-bold mt-1">{header.score}</div>
                 </th>
               ))}
             </tr>
@@ -83,7 +100,7 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
                 <td className="border border-slate-300 px-4 py-3 font-semibold text-slate-800 bg-slate-50">
                   <div>{item.itemName}</div>
                   <div className="text-sm text-slate-600 font-normal mt-1">
-                    Ponderación: {item.weight}%
+                    {item.weight}%
                   </div>
                 </td>
                 {item.descriptors.map((descriptor, descIndex) => (
@@ -116,7 +133,7 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
       )}
 
       {/* Footer */}
-      <div className="p-4 bg-slate-100 text-center text-sm text-slate-600">
+      <div className="p-4 bg-slate-100 text-center text-sm text-slate-600 no-print">
         <p>Rúbrica generada con IA • Basada en la LOMLOE</p>
       </div>
     </div>
