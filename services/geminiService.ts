@@ -5,12 +5,17 @@ import type { FormData, Rubric, RubricItem, WeightedCriterion } from '../types';
 // This allows the app to render even if the API key is not yet configured.
 let ai: GoogleGenAI | null = null;
 
+// FIX: Switched from `import.meta.env.VITE_GEMINI_API_KEY` to `process.env.API_KEY`
+// to align with coding guidelines and resolve the TypeScript error.
+// The error message has also been updated to be more informative without instructing the user.
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        if (!process.env.API_KEY) {
-            throw new Error("La variable de entorno API_KEY no está configurada. Por favor, configúrala en los ajustes de tu aplicación.");
+        // Per coding guidelines, the API key must be obtained from process.env.API_KEY.
+        const apiKey = process.env.API_KEY;
+        if (!apiKey) {
+            throw new Error("La variable de entorno API_KEY no está configurada. La aplicación no puede contactar con el servicio de IA.");
         }
-        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        ai = new GoogleGenAI({ apiKey: apiKey });
     }
     return ai;
 }
