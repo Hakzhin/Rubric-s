@@ -1,135 +1,235 @@
-/// <reference types="vite/client" />
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import type { FormData, Rubric } from '../types';
+import { GoogleGenAI, Type } from "@google/genai";
+import type { FormData, Rubric, RubricItem, WeightedCriterion } from '../types';
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-if (!apiKey) {
-  throw new Error('API_KEY environment variable not set');
+if (!process.env.API_KEY) {
+    throw new Error("API_KEY environment variable not set");
 }
 
-const genAI = new GoogleGenerativeAI(apiKey);
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export async function generateRubric(formData: FormData): Promise<Rubric> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-  
-  const prompt = `Eres un experto en diseño de rúbricas de evaluación educativa basadas en la LOMLOE para el sistema educativo español.
+  const { stage, course, subject, evaluationElement, performanceLevels, specificCriteria, evaluationCriteria } = formData;
 
-Genera una rúbrica de evaluación en formato JSON con la siguiente información:
+  const itemNames = evaluationCriteria.map(c => c.name);
+  const itemCount = itemNames.length;
 
-Contexto:
-- Etapa educativa: ${formData.stage}
-- Curso: ${formData.course}
-- Asignatura: ${formData.subject}
-- Elemento de evaluación: ${formData.evaluationElement}
-- Niveles de desempeño: ${formData.performanceLevels.join(', ')}
-- Criterios específicos a evaluar: ${formData.specificCriteria.join('; ')}
-- Criterios de evaluación ponderados: ${formData.evaluationCriteria.map(c => `${c.name} (${c.weight}%)`).join('; ')}
+  const prompt = `Eres un experto en pedagogía y diseño curricular. Tu tarea es crear una rúbrica de evaluación detallada, coherente y con puntuaciones.
 
-Requisitos de la rúbrica:
-1. El título debe ser claro y descriptivo
-2. Los niveles de desempeño (scaleHeaders) deben corresponder exactamente a: ${formData.performanceLevels.join(', ')}
-3. Cada nivel debe tener una puntuación numérica asociada
-4. Cada criterio de evaluación debe tener descriptores detallados para cada nivel de desempeño
-5. Los descriptores deben ser claros, observables y medibles
-6. Deben estar alineados con la normativa LOMLOE
-7. La suma de los pesos debe ser 100%
+    **Contexto de la Evaluación:**
+    -   **Elemento a evaluar:** ${evaluationElement}
+    -   **Etapa Educativa:** ${stage}
+    -   **Curso:** ${course}
+    -   **Asignatura:** ${subject}
+    -   **Criterios de Evaluación (Currículo LOMLOE):** ${specificCriteria.join('; ')}
+    -   **Aspectos Específicos a Evaluar (que serán los ítems de la rúbrica):** ${itemNames.join('; ')}
 
-Formato JSON requerido:
-{
-  "title": "Título de la rúbrica",
-  "scaleHeaders": [
-    { "level": "Nivel1", "score": "10" },
-    { "level": "Nivel2", "score": "8" }
-  ],
-  "items": [
-    {
-      "itemName": "Nombre del criterio",
-      "weight": 25,
-      "descriptors": [
-        { "level": "Nivel1", "description": "Descripción detallada", "score": "10" },
-        { "level": "Nivel2", "description": "Descripción detallada", "score": "8" }
-      ]
-    }
-  ],
-  "specificCriteria": ["Criterio específico 1", "Criterio específico 2"]
-}
+    **Instrucciones para la Rúbrica:**
+    1.  El título de la rúbrica debe ser conciso y reflejar que se está evaluando "${evaluationElement}" en la asignatura de "${subject}".
+    2.  Los ítems de evaluación de la rúbrica ('itemName') deben ser **exactamente** los "Aspectos Específicos a Evaluar" proporcionados. Habrá un total de **${itemCount}** ítems. Para cada uno de los "Aspectos Específicos a Evaluar", crea una fila en la rúbrica.
+    3.  Usa los siguientes niveles de desempeño, ordenados de menor a mayor: **${performanceLevels.join(', ')}**. Debes usar estos nombres exactos.
+    4.  Asigna una puntuación a cada nivel de desempeño basándote en la siguiente escala ESTÁNDAR. Debes usar estos rangos/valores exactos para los niveles correspondientes:
+        - Insuficiente: "0-4"
+        - Suficiente: "5"
+        - Bien: "6"
+        - Notable: "7-8"
+        - Sobresaliente: "9-10"
+        Si el usuario ha proporcionado un nivel de desempeño personalizado que no está en esta lista, asígnale una puntuación coherente que encaje con la progresión.
+    5.  Los encabezados de la escala deben incluir el nombre del nivel y su puntuación.
+    6.  Las descripciones para cada nivel dentro de un ítem deben ser claras, observables y mostrar una progresión lógica de dominio, desde el nivel más bajo al más alto. Estas descripciones deben estar fundamentadas en los "Criterios de Evaluación (Currículo LOMLOE)" proporcionados.
 
-Genera SOLO el JSON válido, sin texto adicional antes o después.`;
+    Genera la respuesta estrictamente en el formato JSON especificado en el schema.`;
+    
+    const responseSchema = {
+      type: Type.OBJECT,
+      properties: {
+        title: {
+          type: Type.STRING,
+          description: "Un título conciso y descriptivo para la rúbrica."
+        },
+        scaleHeaders: {
+          type: Type.ARRAY,
+          description: `Un array de objetos con exactamente ${performanceLevels.length} encabezados para la escala, ordenados de menor a mayor logro. Cada objeto debe contener el nivel (nombre) y una puntuación en formato de texto.`,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              level: { type: Type.STRING, description: "El nombre del nivel de desempeño." },
+              score: { type: Type.STRING, description: "La puntuación en formato de texto para este nivel (ej: '5', '7-8')." }
+            },
+            required: ['level', 'score']
+          }
+        },
+        items: {
+          type: Type.ARRAY,
+          description: `Un array con exactamente ${itemCount} objetos, cada uno representando un ítem de evaluación.`,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              itemName: {
+                type: Type.STRING,
+                description: "El nombre del ítem de evaluación. Debe ser uno de los 'Aspectos Específicos a Evaluar' proporcionados."
+              },
+              descriptors: {
+                type: Type.ARRAY,
+                description: `Un array con exactamente ${performanceLevels.length} objetos, cada uno describiendo un nivel de desempeño para el ítem.`,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    level: {
+                      type: Type.STRING,
+                      description: "El nivel de la escala al que corresponde esta descripción (debe coincidir con un scaleHeader)."
+                    },
+                    description: {
+                      type: Type.STRING,
+                      description: "La descripción específica y observable del desempeño del estudiante en este nivel para este ítem."
+                    },
+                    score: {
+                        type: Type.STRING,
+                        description: "La puntuación en formato de texto para este nivel (debe coincidir con el score del scaleHeader)."
+                    }
+                  },
+                  required: ['level', 'description', 'score']
+                }
+              }
+            },
+            required: ['itemName', 'descriptors']
+          }
+        }
+      },
+      required: ['title', 'scaleHeaders', 'items']
+    };
+
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: responseSchema,
+        temperature: 0.8,
+      }
+    });
     
-    let jsonText = text.trim();
-    if (jsonText.startsWith('```json')) {
-      jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    } else if (jsonText.startsWith('```')) {
-      jsonText = jsonText.replace(/```\n?/g, '').trim();
+    const jsonText = response.text.trim();
+    const parsedData = JSON.parse(jsonText);
+
+    if (!parsedData.title || !Array.isArray(parsedData.items)) {
+        throw new Error("Formato de respuesta de la IA inválido.");
     }
-    
-    const rubric: Rubric = JSON.parse(jsonText);
-    
-    if (!rubric.title || !rubric.scaleHeaders || !rubric.items) {
-      throw new Error('El formato de la rúbrica generada no es válido');
-    }
-    
-    return rubric;
+
+    // Add weights back to the items from the original form data
+    const itemsWithWeights: RubricItem[] = parsedData.items.map((item: Omit<RubricItem, 'weight'>) => {
+        const originalCriterion = evaluationCriteria.find(c => c.name === item.itemName);
+        return {
+            ...item,
+            weight: originalCriterion ? originalCriterion.weight : 0,
+        };
+    });
+
+    const finalRubric: Rubric = {
+        ...parsedData,
+        items: itemsWithWeights,
+        specificCriteria: formData.specificCriteria,
+    };
+
+    return finalRubric;
+
   } catch (error) {
-    console.error('Error al generar la rúbrica:', error);
-    throw new Error('No se pudo generar la rúbrica. Por favor, verifica tu conexión y la API key.');
+    console.error("Error calling Gemini API:", error);
+    throw new Error("No se pudo generar la rúbrica desde el servicio de IA.");
   }
 }
 
 export async function generateCriteriaSuggestions(
-  stage: string,
-  course: string,
-  subject: string,
-  evaluationElement: string
-): Promise<string[]> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-  
-  const prompt = `Eres un experto en evaluación educativa basada en la LOMLOE para el sistema educativo español.
+  context: Pick<FormData, 'stage' | 'course' | 'subject' | 'evaluationElement'>,
+  criteriaType: 'specific' | 'evaluation'
+): Promise<string[] | WeightedCriterion[]> {
+    const { stage, course, subject, evaluationElement } = context;
 
-Genera una lista de 5-8 criterios de evaluación específicos y concretos para:
-- Etapa educativa: ${stage}
-- Curso: ${course}
-- Asignatura: ${subject}
-- Elemento de evaluación: ${evaluationElement}
+    let prompt: string;
+    let responseSchema: any;
 
-Los criterios deben:
-1. Ser observables y medibles
-2. Estar alineados con la LOMLOE
-3. Ser apropiados para el nivel educativo
-4. Ser claros y concisos
-5. Cubrir diferentes aspectos del elemento a evaluar
+    if (criteriaType === 'specific') {
+        const typeDescription = 'Criterios de Evaluación del currículo oficial LOMLOE de la Región de Murcia';
+        const examples = 'Por ejemplo: "1.1. Comprender e interpretar el sentido global...", "3.2. Producir textos escritos y multimodales..."';
+        const taskInstruction = `Genera una lista de 4 o 5 **${typeDescription}** que sean los más relevantes para evaluar un "${evaluationElement}" en este contexto. **Debes incluir su numeración oficial** (ej: 1.1, 2.3, etc.) tal como aparece en el currículo.\n${examples}`;
+        
+        prompt = `Eres un asistente experto en el diseño de currículos educativos, especializado en la normativa de la Región de Murcia (Educarm) para la LOMLOE.
 
-Responde SOLO con un array JSON de strings, sin texto adicional:
-["Criterio 1", "Criterio 2", "Criterio 3"]`;
-
-  try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+        **Contexto:**
+        - **Etapa Educativa:** ${stage}
+        - **Asignatura:** ${subject}
+        - **Curso:** ${course}
+        - **Elemento a evaluar:** ${evaluationElement}
     
-    let jsonText = text.trim();
-    if (jsonText.startsWith('```json')) {
-      jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    } else if (jsonText.startsWith('```')) {
-      jsonText = jsonText.replace(/```\n?/g, '').trim();
+        **Tarea:**
+        ${taskInstruction}
+    
+        Devuelve la respuesta estrictamente como un array JSON de strings. Cada string debe ser un criterio conciso y claro. No incluyas nada más en tu respuesta.`;
+        
+        responseSchema = {
+            type: Type.ARRAY,
+            items: { type: Type.STRING }
+        };
+
+    } else { // criteriaType === 'evaluation'
+        const typeDescription = 'Aspectos observables o destrezas generales, junto con una ponderación sugerida para cada uno.';
+        const examples = 'Por ejemplo, para un debate podría ser: [{ "name": "Expresar opiniones de forma argumentada", "weight": 40 }, { "name": "Respetar el turno de palabra", "weight": 30 }, { "name": "Uso de vocabulario específico", "weight": 30 }].';
+        const taskInstruction = `Genera una lista de 4 o 5 **${typeDescription}** relevantes para este contexto. **Asigna un porcentaje de ponderación (weight) a cada aspecto**. La suma total de todos los porcentajes **debe ser exactamente 100**. No inventes aspectos demasiado genéricos, deben ser evaluables.\n${examples}`;
+
+        prompt = `Eres un asistente experto en el diseño de currículos educativos, especializado en la normativa de la Región de Murcia (Educarm) para la LOMLOE.
+
+        **Contexto:**
+        - **Etapa Educativa:** ${stage}
+        - **Asignatura:** ${subject}
+        - **Curso:** ${course}
+        - **Elemento a evaluar:** ${evaluationElement}
+    
+        **Tarea:**
+        ${taskInstruction}
+    
+        Devuelve la respuesta estrictamente como un array JSON de objetos. Cada objeto debe tener una clave "name" (string) y "weight" (number). La suma de todos los "weight" debe ser 100. No incluyas nada más en tu respuesta.`;
+
+        responseSchema = {
+            type: Type.ARRAY,
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    name: { type: Type.STRING, description: "El nombre del aspecto a evaluar." },
+                    weight: { type: Type.NUMBER, description: "El porcentaje de ponderación para este aspecto." }
+                },
+                required: ['name', 'weight']
+            }
+        };
     }
-    
-    const criteria: string[] = JSON.parse(jsonText);
-    return criteria;
-  } catch (error) {
-    console.error('Error al generar sugerencias:', error);
-    return [
-      'Comprensión del contenido',
-      'Aplicación práctica',
-      'Expresión y comunicación',
-      'Pensamiento crítico',
-      'Trabajo colaborativo'
-    ];
-  }
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: responseSchema,
+                temperature: 0.7,
+            }
+        });
+        const jsonText = response.text.trim();
+        const parsedData = JSON.parse(jsonText);
+
+        if (criteriaType === 'specific') {
+             if (!Array.isArray(parsedData) || !parsedData.every(item => typeof item === 'string')) {
+                throw new Error("Invalid format from AI for suggestions.");
+            }
+            return parsedData;
+        } else {
+             if (!Array.isArray(parsedData) || !parsedData.every(item => typeof item === 'object' && typeof item.name === 'string' && typeof item.weight === 'number')) {
+                throw new Error("Invalid format from AI for weighted suggestions.");
+            }
+            return parsedData;
+        }
+
+    } catch (error) {
+        console.error("Error calling Gemini API for suggestions:", error);
+        throw new Error("No se pudieron generar las sugerencias.");
+    }
 }

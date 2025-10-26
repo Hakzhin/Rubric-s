@@ -15,7 +15,6 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setRubric(null);
-
     try {
       const result = await generateRubric(formData);
       setRubric(result);
@@ -32,13 +31,11 @@ const App: React.FC = () => {
       <div className="no-print">
         <Header />
       </div>
-      
       <main className="container mx-auto p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           <div className="no-print">
             <RubricForm onSubmit={handleFormSubmit} isLoading={isLoading} />
           </div>
-
           <div className="mt-8">
             {isLoading && (
               <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-md border border-slate-200 no-print">
@@ -46,16 +43,13 @@ const App: React.FC = () => {
                 <p className="mt-4 text-slate-600">Generando rúbrica, por favor espera...</p>
               </div>
             )}
-
             {error && (
               <div className="p-4 text-center text-red-700 bg-red-100 border border-red-400 rounded-lg no-print">
                 {error}
               </div>
             )}
-
             {rubric && !isLoading && <RubricDisplay rubric={rubric} />}
-            
-            {!rubric && !isLoading && !error && (
+             {!rubric && !isLoading && !error && (
               <div className="text-center p-8 bg-white rounded-lg shadow-md border border-slate-200 no-print">
                 <h2 className="text-xl font-semibold text-slate-700">Comienza a diseñar tu rúbrica</h2>
                 <p className="mt-2 text-slate-500">Completa el formulario de arriba para generar una rúbrica de evaluación personalizada con IA.</p>
@@ -64,7 +58,6 @@ const App: React.FC = () => {
           </div>
         </div>
       </main>
-
       <footer className="text-center p-4 text-slate-400 text-sm no-print">
         <p>Desarrollado con IA por Rúbric@s EBP</p>
       </footer>
