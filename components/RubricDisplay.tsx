@@ -36,6 +36,27 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUp
   const reversedHeaders = [...editedRubric.scaleHeaders].reverse();
   const rubricToDisplay = isEditMode ? editedRubric : rubric;
 
+  const handleHeaderScoreChange = (levelToUpdate: string, newScore: string) => {
+    const updatedRubric = structuredClone(editedRubric);
+
+    // Find and update the header
+    const headerToUpdate = updatedRubric.scaleHeaders.find(h => h.level === levelToUpdate);
+    if (headerToUpdate) {
+        headerToUpdate.score = newScore;
+    }
+
+    // Find and update all corresponding descriptors
+    updatedRubric.items.forEach(item => {
+        item.descriptors.forEach(desc => {
+            if (desc.level === levelToUpdate) {
+                desc.score = newScore;
+            }
+        });
+    });
+
+    setEditedRubric(updatedRubric);
+  };
+
   const handleExportToExcel = () => {
     // Since XLSX is loaded from a CDN, we access it from the window object.
     const XLSX = (window as any).XLSX;
@@ -314,9 +335,19 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUp
                     className="p-3 font-bold text-center text-sm border border-slate-200"
                     style={getHeaderStyle(index, reversedHeaders.length)}
                 >
-                    <div className="flex flex-col items-center justify-center">
+                    <div className="flex flex-col items-center justify-center gap-1">
                         <span className="text-base">{header.level.toUpperCase()}</span>
-                        <span className="text-lg">{header.score}</span>
+                        {isEditMode ? (
+                          <input
+                            type="text"
+                            value={header.score}
+                            onChange={(e) => handleHeaderScoreChange(header.level, e.target.value)}
+                            className="w-24 p-1 text-center bg-white text-slate-900 border border-slate-400 rounded-md shadow-inner text-lg"
+                            style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)' }}
+                          />
+                        ) : (
+                          <span className="text-lg">{header.score}</span>
+                        )}
                     </div>
                 </th>
               ))}

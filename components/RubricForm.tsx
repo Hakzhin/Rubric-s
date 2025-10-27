@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { ETAPAS_EDUCATIVAS, CURSOS_POR_ETAPA, ASIGNATURAS_POR_ETAPA } from '../constants';
 import { generateCriteriaSuggestions } from '../services/geminiService';
 import type { FormData, WeightedCriterion } from '../types';
-import { MagicWandIcon } from './icons/MagicWandIcon';
+import { GraduationCapIcon } from './icons/GraduationCapIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
 
 interface RubricFormProps {
@@ -48,7 +48,7 @@ const CriteriaSection: React.FC<CriteriaSectionProps> = ({ title, criteria, onCr
             onCriteriaChange(suggestions); // FIX: Replace instead of append
         } catch (err) {
             console.error(err);
-            // TEMP FIX: Updated error message check for Render compatibility.
+            // Fix: Updated error message check to look for API_KEY, consistent with guideline compliance.
             if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
                 setError(err.message);
             } else {
@@ -177,7 +177,7 @@ export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading, ini
           setEvaluationCriteria(suggestions); // FIX: Replace instead of append
       } catch (err) {
           console.error(err);
-          // TEMP FIX: Updated error message check for Render compatibility.
+          // Fix: Updated error message check to look for API_KEY, consistent with guideline compliance.
           if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
               setSuggestionError(err.message);
           } else {
@@ -357,7 +357,7 @@ export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading, ini
 
           <div className="pt-2">
             <button type="submit" disabled={isLoading || !isFormValid} className="w-full flex justify-center items-center gap-2 p-3 text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors duration-200">
-              <MagicWandIcon />
+              <GraduationCapIcon />
               {isLoading ? 'Generando...' : 'Generar Rúbrica'}
             </button>
             {!isWeightOk && evaluationCriteria.length > 0 && <p className="text-xs text-center text-red-600 mt-2">La ponderación total debe ser exactamente 100% para poder generar la rúbrica.</p>}
