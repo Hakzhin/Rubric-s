@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { Header } from './components/Header';
 import { RubricForm } from './components/RubricForm';
@@ -56,6 +57,13 @@ const App: React.FC = () => {
     }
   }
 
+  const handleFormReset = useCallback(() => {
+    setRubric(null);
+    setError(null);
+    setLoadedFormData(null);
+    setCurrentFormData(null);
+  }, []);
+
   return (
     <div className="min-h-screen">
       <div className="no-print">
@@ -66,7 +74,12 @@ const App: React.FC = () => {
           <div className="no-print">
             <SavedRubrics onLoadRubric={handleLoadRubric} key={rubricSaveCounter} />
             <div id="rubric-form">
-              <RubricForm onSubmit={handleFormSubmit} isLoading={isLoading} initialData={loadedFormData} />
+              <RubricForm 
+                onSubmit={handleFormSubmit} 
+                isLoading={isLoading} 
+                initialData={loadedFormData}
+                onReset={handleFormReset}
+              />
             </div>
           </div>
           <div className="mt-8">
