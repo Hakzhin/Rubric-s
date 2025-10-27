@@ -46,8 +46,7 @@ const CriteriaSection: React.FC<CriteriaSectionProps> = ({ title, criteria, onCr
             onCriteriaChange([...criteria, ...newSuggestions]);
         } catch (err) {
             console.error(err);
-            // Fix: Check for the correct API key related errors for Vite.
-            if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
+            if (err instanceof Error && (err.message.includes('API_KEY') || err.message.includes('VITE_GEMINI_API_KEY'))) {
                 setError(err.message);
             } else {
                 setError('Error al obtener sugerencias.');
@@ -148,8 +147,7 @@ export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading }) =
           setEvaluationCriteria([...evaluationCriteria, ...newSuggestions]);
       } catch (err) {
           console.error(err);
-          // Fix: Check for the correct API key related errors for Vite.
-          if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
+          if (err instanceof Error && (err.message.includes('API_KEY') || err.message.includes('VITE_GEMINI_API_KEY'))) {
               setSuggestionError(err.message);
           } else {
               setSuggestionError('Error al obtener sugerencias.');

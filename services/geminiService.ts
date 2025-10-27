@@ -5,15 +5,13 @@ import type { FormData, Rubric, RubricItem, WeightedCriterion } from '../types';
 // Lazily initialize the AI client to avoid throwing an error on module load.
 let ai: GoogleGenAI | null = null;
 
-// Fix: Use `import.meta.env.VITE_GEMINI_API_KEY` for Vite compatibility.
 function getAiClient(): GoogleGenAI {
     if (!ai) {
         // The API key is obtained from Vite's environment variables.
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
         if (!apiKey) {
-            // Updated error message to reference the correct environment variable.
-            throw new Error("La variable de entorno VITE_GEMINI_API_KEY no está configurada. Por favor, asegúrate de que esté disponible en tu archivo .env y que el servidor de desarrollo se haya reiniciado.");
+            throw new Error("La variable de entorno VITE_GEMINI_API_KEY no está configurada. Por favor, asegúrate de que esté disponible.");
         }
         ai = new GoogleGenAI({ apiKey });
     }
@@ -150,8 +148,7 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    // Fix: Check for the correct API key error message for Vite.
-    if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
+    if (error instanceof Error && (error.message.includes('API_KEY') || error.message.includes('VITE_GEMINI_API_KEY'))) {
         throw error;
     }
     throw new Error("No se pudo generar la rúbrica desde el servicio de IA.");
@@ -249,8 +246,7 @@ export async function generateCriteriaSuggestions(
 
     } catch (error) {
         console.error("Error calling Gemini API for suggestions:", error);
-        // Fix: Check for the correct API key error message for Vite.
-        if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
+        if (error instanceof Error && (error.message.includes('API_KEY') || error.message.includes('VITE_GEMINI_API_KEY'))) {
             throw error;
         }
         throw new Error("No se pudieron generar las sugerencias.");

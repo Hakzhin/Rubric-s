@@ -1,6 +1,5 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import type { Rubric } from '../types';
-import { DocsIcon } from './icons/DocsIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 
 interface RubricDisplayProps {
@@ -24,135 +23,175 @@ const getHeaderStyle = (index: number, total: number): React.CSSProperties => {
 
 export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
   const rubricRef = useRef<HTMLDivElement>(null);
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
 
   // Reverse headers and descriptors to display from highest to lowest
   const reversedHeaders = [...rubric.scaleHeaders].reverse();
 
-  const handleCopyToClipboard = async () => {
-    if (!rubricRef.current) return;
-
-    // Clone the node to avoid manipulating the live DOM
-    const contentToCopy = rubricRef.current.cloneNode(true) as HTMLElement;
-
-    // Remove the buttons from the cloned content
-    const buttons = contentToCopy.querySelector('.no-print');
-    if (buttons) {
-      buttons.remove();
-    }
-    
-    const htmlContent = contentToCopy.innerHTML;
-
-    try {
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const clipboardItem = new ClipboardItem({ 'text/html': blob });
-      await navigator.clipboard.write([clipboardItem]);
-      setCopyStatus('copied');
-      setTimeout(() => setCopyStatus('idle'), 2500);
-    } catch (err) {
-      console.error('Error copying to clipboard:', err);
-      setCopyStatus('error');
-      setTimeout(() => setCopyStatus('idle'), 2500);
-    }
-  };
-  
-  const handleDownload = () => {
+  const handleDownloadPreview = () => {
     const styleToString = (style: React.CSSProperties) => {
-        return Object.entries(style)
-            .map(([key, value]) => `${key.replace(/([A-Z])/g, '-$1').toLowerCase()}:${value}`)
-            .join(';');
+      return Object.entries(style)
+        .map(([key, value]) => `${key.replace(/([A-Z])/g, '-$1').toLowerCase()}:${value}`)
+        .join(';');
     };
-
+  
+    const reversedHeaders = [...rubric.scaleHeaders].reverse();
+  
     const tableHeader = `
-        <thead>
-            <tr>
-                <th style="padding: 12px; font-weight: 600; text-align: left; border: 1px solid #e2e8f0; width: 25%; background-color: #f8fafc; vertical-align: top;">Ítem de Evaluación</th>
-                ${reversedHeaders.map((header, index) => `
-                    <th style="padding: 12px; font-weight: 700; text-align: center; border: 1px solid #e2e8f0; ${styleToString(getHeaderStyle(index, reversedHeaders.length))}">
-                        <div style="font-size: 1rem;">${header.level.toUpperCase()}</div>
-                        <div style="font-size: 1.125rem;">${header.score}</div>
-                    </th>
-                `).join('')}
-            </tr>
-        </thead>
+      <thead>
+        <tr>
+          <th style="padding: 12px; font-weight: 600; text-align: left; border: 1px solid #e2e8f0; width: 25%; background-color: #f8fafc; vertical-align: top;">Ítem de Evaluación</th>
+          ${reversedHeaders.map((header, index) => `
+            <th style="padding: 12px; font-weight: 700; text-align: center; border: 1px solid #e2e8f0; ${styleToString(getHeaderStyle(index, reversedHeaders.length))}">
+              <div style="font-size: 1rem;">${header.level.toUpperCase()}</div>
+              <div style="font-size: 1.125rem;">${header.score}</div>
+            </th>
+          `).join('')}
+        </tr>
+      </thead>
     `;
-
+  
     const tableBody = `
-        <tbody>
-            ${rubric.items.map(item => {
-                const reversedDescriptors = [...item.descriptors].reverse();
-                return `
-                    <tr style="border-top: 1px solid #e2e8f0;">
-                        <td style="padding: 12px; font-weight: 600; border: 1px solid #e2e8f0; vertical-align: top; background-color: #f8fafc;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <span style="flex-grow: 1;">${item.itemName}</span>
-                                <span style="font-weight: 700; background-color: #e2e8f0; border-radius: 9999px; padding: 2px 8px; font-size: 0.75rem; white-space: nowrap; margin-left: 8px;">${item.weight}%</span>
-                            </div>
-                            ${(rubric.specificCriteria && rubric.specificCriteria.length > 0) ? `
-                                <div style="margin-top: 8px;">
-                                    ${rubric.specificCriteria.map(criterion => {
-                                        const criterionNumber = criterion.match(/^[\d.]+/)?.[0] || '';
-                                        if (!criterionNumber) return '';
-                                        return `<span style="font-size: 0.75rem; font-weight: 500; background-color: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; margin-right: 6px; display: inline-block; margin-top: 4px;">${criterionNumber}</span>`;
-                                    }).join('')}
-                                </div>
-                            ` : ''}
-                        </td>
-                        ${reversedDescriptors.map(descriptor => `
-                            <td style="padding: 12px; border: 1px solid #e2e8f0; vertical-align: top;">
-                                ${descriptor.description}
-                            </td>
-                        `).join('')}
-                    </tr>
-                `;
-            }).join('')}
-        </tbody>
+      <tbody>
+        ${rubric.items.map(item => {
+          const reversedDescriptors = [...item.descriptors].reverse();
+          return `
+            <tr style="border-top: 1px solid #e2e8f0;">
+              <td style="padding: 12px; font-weight: 600; border: 1px solid #e2e8f0; vertical-align: top; background-color: #f8fafc;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                  <span style="flex-grow: 1;">${item.itemName}</span>
+                  <span style="font-weight: 700; background-color: #e2e8f0; border-radius: 9999px; padding: 2px 8px; font-size: 0.75rem; white-space: nowrap; margin-left: 8px;">${item.weight}%</span>
+                </div>
+                ${(rubric.specificCriteria && rubric.specificCriteria.length > 0) ? `
+                  <div style="margin-top: 8px;">
+                    ${rubric.specificCriteria.map(criterion => {
+                      const criterionNumber = criterion.match(/^[\d.]+/)?.[0] || '';
+                      if (!criterionNumber) return '';
+                      return `<span style="font-size: 0.75rem; font-weight: 500; background-color: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; margin-right: 6px; display: inline-block; margin-top: 4px;">${criterionNumber}</span>`;
+                    }).join('')}
+                  </div>
+                ` : ''}
+              </td>
+              ${reversedDescriptors.map(descriptor => `
+                <td style="padding: 12px; border: 1px solid #e2e8f0; vertical-align: top;">
+                  ${descriptor.description}
+                </td>
+              `).join('')}
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
     `;
-
+  
     const htmlContent = `
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <title>${rubric.title}</title>
-            <style>
-                body {
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                    font-size: 14px;
-                    color: #334155;
-                }
-                table {
-                    border-collapse: collapse;
-                    width: 100%;
-                }
-            </style>
-        </head>
-        <body>
-            <h2 style="text-align: center; font-size: 1.875rem; font-weight: 700; color: #1e293b; margin-bottom: 24px;">${rubric.title}</h2>
-            <table>
-                ${tableHeader}
-                ${tableBody}
-            </table>
-        </body>
-        </html>
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${rubric.title} - Vista Previa</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 14px;
+            color: #334155;
+            padding: 40px 20px;
+            background-color: #f8fafc;
+          }
+          .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          }
+          h1 {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 32px;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+          }
+          .instructions {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            color: #1e40af;
+          }
+          .instructions h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+          }
+          .instructions ul {
+            margin-left: 20px;
+            margin-top: 8px;
+          }
+          .instructions li {
+            margin-bottom: 4px;
+          }
+          @media print {
+            body {
+              background-color: white;
+              padding: 0;
+            }
+            .container {
+              box-shadow: none;
+              padding: 0;
+            }
+            .instructions {
+              display: none;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            @page {
+              size: A4 landscape;
+              margin: 1.5cm;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="instructions">
+            <h3>💡 Instrucciones de uso:</h3>
+            <ul>
+              <li><strong>Imprimir o guardar como PDF:</strong> Pulsa Ctrl+P (Windows/Linux) o Cmd+P (Mac)</li>
+              <li><strong>Copiar la tabla:</strong> Selecciona la tabla con el ratón y pulsa Ctrl+C (Windows/Linux) o Cmd+C (Mac)</li>
+              <li><strong>Pegar en Google Docs/Word:</strong> Después de copiar, pega con Ctrl+V (Windows/Linux) o Cmd+V (Mac)</li>
+            </ul>
+          </div>
+          <h1>${rubric.title}</h1>
+          <table>
+            ${tableHeader}
+            ${tableBody}
+          </table>
+        </div>
+      </body>
+      </html>
     `;
-
-    const blob = new Blob([htmlContent], { type: 'application/msword' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    const sanitizedTitle = rubric.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    link.download = `rubrica_${sanitizedTitle}.doc`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-  };
-
-  const getCopyButtonText = () => {
-    switch (copyStatus) {
-        case 'copied': return '¡Copiado!';
-        case 'error': return 'Error al copiar';
-        default: return 'Copiar';
+  
+    // Open in new window
+    const previewWindow = window.open('', '_blank');
+    if (previewWindow) {
+      previewWindow.document.write(htmlContent);
+      previewWindow.document.close();
+    } else {
+      alert('Por favor, permite las ventanas emergentes para usar la vista previa.');
     }
   };
   
@@ -160,20 +199,12 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
     <div ref={rubricRef} className="bg-white p-6 md:p-8 rounded-lg shadow-lg border border-slate-200 animate-fade-in printable-area relative">
       <div className="absolute top-4 right-4 flex items-center gap-2 no-print">
         <button 
-            onClick={handleDownload}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors"
-            title="Descargar como documento editable (.doc) para Google Docs, Word, etc."
+          onClick={handleDownloadPreview}
+          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors"
+          title="Abrir en una nueva pestaña para descargar o imprimir"
         >
-            <DownloadIcon />
-            <span>Descargar</span>
-        </button>
-        <button 
-            onClick={handleCopyToClipboard}
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white rounded-md shadow-sm transition-colors ${copyStatus === 'copied' ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-700'}`}
-            title="Copiar como tabla enriquecida para pegar en Google Docs, Word, etc."
-        >
-            <DocsIcon />
-            <span>{getCopyButtonText()}</span>
+          <DownloadIcon />
+          <span>Descargar</span>
         </button>
       </div>
 

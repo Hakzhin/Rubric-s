@@ -21,8 +21,7 @@ const App: React.FC = () => {
       setRubric(result);
     } catch (err) {
       console.error(err);
-      // Fix: Check for the correct API key related errors for Vite.
-      if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
+      if (err instanceof Error && (err.message.includes('API_KEY') || err.message.includes('VITE_GEMINI_API_KEY'))) {
         setError(err.message);
       } else {
         setError('Hubo un error al generar la rúbrica. Por favor, inténtalo de nuevo.');
