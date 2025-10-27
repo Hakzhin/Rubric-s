@@ -1,27 +1,35 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Header } from './components/Header';
 import { RubricForm } from './components/RubricForm';
 import { RubricDisplay } from './components/RubricDisplay';
 import { LoadingSpinner } from './components/LoadingSpinner';
+import { SavedRubrics } from './components/SavedRubrics';
 import { generateRubric } from './services/geminiService';
+import { saveRubricToStorage, type SavedRubric } from './utils/rubricStorage';
 import type { Rubric, FormData } from './types';
 
 const App: React.FC = () => {
   const [rubric, setRubric] = useState<Rubric | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentFormData, setCurrentFormData] = useState<FormData | null>(null);
+  const [loadedFormData, setLoadedFormData] = useState<FormData | null>(null);
+  const [rubricSaveCounter, setRubricSaveCounter] = useState(0);
 
   const handleFormSubmit = useCallback(async (formData: FormData) => {
     setIsLoading(true);
     setError(null);
     setRubric(null);
+    setCurrentFormData(formData);
     try {
       const result = await generateRubric(formData);
       setRubric(result);
+      saveRubricToStorage(result, formData);
+      setRubricSaveCounter(c => c + 1);
     } catch (err) {
       console.error(err);
-      if (err instanceof Error && (err.message.includes('API_KEY') || err.message.includes('VITE_GEMINI_API_KEY'))) {
+      if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
         setError(err.message);
       } else {
         setError('Hubo un error al generar la rúbrica. Por favor, inténtalo de nuevo.');
@@ -30,6 +38,23 @@ const App: React.FC = () => {
       setIsLoading(false);
     }
   }, []);
+  
+  const handleLoadRubric = (saved: SavedRubric) => {
+      setRubric(saved.rubric);
+      setCurrentFormData(saved.formData);
+      setLoadedFormData(saved.formData);
+      // Scroll to the form
+      const formElement = document.getElementById('rubric-form');
+      formElement?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+  const handleRubricUpdate = (updatedRubric: Rubric) => {
+    setRubric(updatedRubric);
+    if(currentFormData) {
+        saveRubricToStorage(updatedRubric, currentFormData);
+        setRubricSaveCounter(c => c + 1);
+    }
+  }
 
   return (
     <div className="min-h-screen">
@@ -39,7 +64,10 @@ const App: React.FC = () => {
       <main className="container mx-auto p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           <div className="no-print">
-            <RubricForm onSubmit={handleFormSubmit} isLoading={isLoading} />
+            <SavedRubrics onLoadRubric={handleLoadRubric} key={rubricSaveCounter} />
+            <div id="rubric-form">
+              <RubricForm onSubmit={handleFormSubmit} isLoading={isLoading} initialData={loadedFormData} />
+            </div>
           </div>
           <div className="mt-8">
             {isLoading && (
@@ -53,7 +81,7 @@ const App: React.FC = () => {
                 {error}
               </div>
             )}
-            {rubric && !isLoading && <RubricDisplay rubric={rubric} />}
+            {rubric && !isLoading && <RubricDisplay rubric={rubric} onRubricUpdate={handleRubricUpdate} />}
              {!rubric && !isLoading && !error && (
               <div className="text-center p-8 bg-white rounded-lg shadow-md border border-slate-200 no-print">
                 <h2 className="text-xl font-semibold text-slate-700">Comienza a diseñar tu rúbrica</h2>

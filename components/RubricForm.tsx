@@ -9,6 +9,7 @@ import { SparklesIcon } from './icons/SparklesIcon';
 interface RubricFormProps {
   onSubmit: (formData: FormData) => void;
   isLoading: boolean;
+  initialData?: FormData | null;
 }
 
 // Subcomponente para la sección de criterios curriculares (sin ponderación)
@@ -46,7 +47,7 @@ const CriteriaSection: React.FC<CriteriaSectionProps> = ({ title, criteria, onCr
             onCriteriaChange([...criteria, ...newSuggestions]);
         } catch (err) {
             console.error(err);
-            if (err instanceof Error && (err.message.includes('API_KEY') || err.message.includes('VITE_GEMINI_API_KEY'))) {
+            if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
                 setError(err.message);
             } else {
                 setError('Error al obtener sugerencias.');
@@ -83,7 +84,7 @@ const CriteriaSection: React.FC<CriteriaSectionProps> = ({ title, criteria, onCr
 };
 
 
-export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading }) => {
+export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading, initialData }) => {
   const [stage, setStage] = useState<string>('');
   const [course, setCourse] = useState<string>('');
   const [subject, setSubject] = useState<string>('');
@@ -102,6 +103,33 @@ export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading }) =
     setCourse('');
     setSubject('');
   }, [stage]);
+
+  useEffect(() => {
+    if (initialData) {
+        const findStageValue = (label: string) => ETAPAS_EDUCATIVAS.find(e => e.label === label)?.value || '';
+        const stageValue = findStageValue(initialData.stage);
+        
+        if (stageValue) {
+            setStage(stageValue);
+            // We need to wait for the stage to update to get the correct course/subject options
+            // So we set them in a separate effect or directly if possible
+            const findCourseValue = (stgVal: string, label: string) => CURSOS_POR_ETAPA[stgVal]?.find(c => c.label === label)?.value || '';
+            setCourse(findCourseValue(stageValue, initialData.course));
+
+            const findSubjectValue = (stgVal: string, label: string) => ASIGNATURAS_POR_ETAPA[stgVal]?.find(s => s.label === label)?.value || '';
+            setSubject(findSubjectValue(stageValue, initialData.subject));
+        } else {
+            setStage('');
+            setCourse('');
+            setSubject('');
+        }
+
+        setEvaluationElement(initialData.evaluationElement);
+        setLevels(initialData.performanceLevels);
+        setSpecificCriteria(initialData.specificCriteria);
+        setEvaluationCriteria(initialData.evaluationCriteria);
+    }
+  }, [initialData]);
 
   const handleAddLevel = () => {
     if (newLevel.trim() && !levels.find(l => l.toLowerCase() === newLevel.trim().toLowerCase())) {
@@ -147,7 +175,7 @@ export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading }) =
           setEvaluationCriteria([...evaluationCriteria, ...newSuggestions]);
       } catch (err) {
           console.error(err);
-          if (err instanceof Error && (err.message.includes('API_KEY') || err.message.includes('VITE_GEMINI_API_KEY'))) {
+          if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
               setSuggestionError(err.message);
           } else {
               setSuggestionError('Error al obtener sugerencias.');

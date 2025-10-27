@@ -7,7 +7,7 @@ let ai: GoogleGenAI | null = null;
 
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        // The API key is obtained from Vite's environment variables.
+        // The API key is obtained from Vite environment variables.
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
         if (!apiKey) {
@@ -148,7 +148,7 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    if (error instanceof Error && (error.message.includes('API_KEY') || error.message.includes('VITE_GEMINI_API_KEY'))) {
+    if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
         throw error;
     }
     throw new Error("No se pudo generar la rúbrica desde el servicio de IA.");
@@ -246,7 +246,7 @@ export async function generateCriteriaSuggestions(
 
     } catch (error) {
         console.error("Error calling Gemini API for suggestions:", error);
-        if (error instanceof Error && (error.message.includes('API_KEY') || error.message.includes('VITE_GEMINI_API_KEY'))) {
+        if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
             throw error;
         }
         throw new Error("No se pudieron generar las sugerencias.");

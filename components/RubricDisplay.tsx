@@ -1,9 +1,10 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import type { Rubric } from '../types';
 import { DownloadIcon } from './icons/DownloadIcon';
 
 interface RubricDisplayProps {
   rubric: Rubric;
+  onRubricUpdate?: (updatedRubric: Rubric) => void;
 }
 
 const colorScale = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e']; // red, orange, yellow, lime, green
@@ -21,11 +22,18 @@ const getHeaderStyle = (index: number, total: number): React.CSSProperties => {
     };
 };
 
-export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
+export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUpdate }) => {
   const rubricRef = useRef<HTMLDivElement>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedRubric, setEditedRubric] = useState<Rubric>(rubric);
+
+  useEffect(() => {
+    setEditedRubric(structuredClone(rubric));
+  }, [rubric]);
 
   // Reverse headers and descriptors to display from highest to lowest
-  const reversedHeaders = [...rubric.scaleHeaders].reverse();
+  const reversedHeaders = [...editedRubric.scaleHeaders].reverse();
+  const rubricToDisplay = isEditMode ? editedRubric : rubric;
 
   const handleDownloadPreview = () => {
     const styleToString = (style: React.CSSProperties) => {
@@ -34,7 +42,8 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
         .join(';');
     };
   
-    const reversedHeaders = [...rubric.scaleHeaders].reverse();
+    const currentRubric = rubricToDisplay;
+    const reversedHeaders = [...currentRubric.scaleHeaders].reverse();
   
     const tableHeader = `
       <thead>
@@ -52,7 +61,7 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
   
     const tableBody = `
       <tbody>
-        ${rubric.items.map(item => {
+        ${currentRubric.items.map(item => {
           const reversedDescriptors = [...item.descriptors].reverse();
           return `
             <tr style="border-top: 1px solid #e2e8f0;">
@@ -61,9 +70,9 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
                   <span style="flex-grow: 1;">${item.itemName}</span>
                   <span style="font-weight: 700; background-color: #e2e8f0; border-radius: 9999px; padding: 2px 8px; font-size: 0.75rem; white-space: nowrap; margin-left: 8px;">${item.weight}%</span>
                 </div>
-                ${(rubric.specificCriteria && rubric.specificCriteria.length > 0) ? `
+                ${(currentRubric.specificCriteria && currentRubric.specificCriteria.length > 0) ? `
                   <div style="margin-top: 8px;">
-                    ${rubric.specificCriteria.map(criterion => {
+                    ${currentRubric.specificCriteria.map(criterion => {
                       const criterionNumber = criterion.match(/^[\d.]+/)?.[0] || '';
                       if (!criterionNumber) return '';
                       return `<span style="font-size: 0.75rem; font-weight: 500; background-color: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; margin-right: 6px; display: inline-block; margin-top: 4px;">${criterionNumber}</span>`;
@@ -88,7 +97,7 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${rubric.title} - Vista Previa</title>
+        <title>${currentRubric.title} - Vista Previa</title>
         <style>
           * {
             margin: 0;
@@ -175,7 +184,7 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
               <li><strong>Pegar en Google Docs/Word:</strong> Después de copiar, pega con Ctrl+V (Windows/Linux) o Cmd+V (Mac)</li>
             </ul>
           </div>
-          <h1>${rubric.title}</h1>
+          <h1>${currentRubric.title}</h1>
           <table>
             ${tableHeader}
             ${tableBody}
@@ -199,6 +208,20 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
     <div ref={rubricRef} className="bg-white p-6 md:p-8 rounded-lg shadow-lg border border-slate-200 animate-fade-in printable-area relative">
       <div className="absolute top-4 right-4 flex items-center gap-2 no-print">
         <button 
+          onClick={() => {
+            if (isEditMode) {
+                onRubricUpdate?.(editedRubric);
+            }
+            setIsEditMode(!isEditMode);
+          }}
+          className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white rounded-md shadow-sm transition-colors ${
+            isEditMode ? 'bg-green-600 hover:bg-green-700' : 'bg-orange-500 hover:bg-orange-600'
+          }`}
+          title={isEditMode ? "Guardar cambios" : "Editar rúbrica"}
+        >
+          {isEditMode ? '💾 Guardar' : '✏️ Editar'}
+        </button>
+        <button 
           onClick={handleDownloadPreview}
           className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors"
           title="Abrir en una nueva pestaña para descargar o imprimir"
@@ -208,7 +231,7 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
         </button>
       </div>
 
-      <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-slate-800">{rubric.title}</h2>
+      <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-slate-800">{rubricToDisplay.title}</h2>
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse">
           <thead>
@@ -228,39 +251,93 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric }) => {
               ))}
             </tr>
           </thead>
-          <tbody>
-            {rubric.items.map((item, itemIndex) => {
-              const reversedDescriptors = [...item.descriptors].reverse();
-              return (
-                <tr key={itemIndex} className="border-t border-slate-200">
+          {isEditMode ? (
+            <tbody>
+              {editedRubric.items.map((item, itemIndex) => {
+                const reversedDescriptors = [...item.descriptors].reverse();
+                return (
+                  <tr key={itemIndex} className="border-t border-slate-200">
                     <td className="p-3 font-semibold text-sm text-slate-800 border-x border-b border-slate-200 align-top bg-slate-50">
-                        <div className="flex justify-between items-start gap-2">
-                           <span>{item.itemName}</span>
-                           <span className="font-bold text-slate-600 bg-slate-200 rounded px-2 py-0.5 text-xs flex-shrink-0">{item.weight}%</span>
-                        </div>
-                        {rubric.specificCriteria && rubric.specificCriteria.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                                {rubric.specificCriteria.map(criterion => {
-                                    const criterionNumber = criterion.match(/^[\d.]+/)?.[0] || '';
-                                    if (!criterionNumber) return null;
-                                    return (
-                                        <span key={criterion} className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded" title={criterion}>
-                                            {criterionNumber}
-                                        </span>
-                                    );
-                                })}
-                            </div>
-                        )}
+                      <textarea
+                        value={item.itemName}
+                        onChange={(e) => {
+                          const updated = structuredClone(editedRubric);
+                          updated.items[itemIndex].itemName = e.target.value;
+                          setEditedRubric(updated);
+                        }}
+                        className="w-full px-2 py-1 border border-slate-300 rounded text-sm bg-white"
+                        rows={2}
+                      />
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-xs text-slate-600">Peso:</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={item.weight}
+                          onChange={(e) => {
+                            const updated = structuredClone(editedRubric);
+                            updated.items[itemIndex].weight = parseInt(e.target.value) || 0;
+                            setEditedRubric(updated);
+                          }}
+                          className="w-16 px-2 py-1 border border-slate-300 rounded text-sm bg-white"
+                        />
+                        <span className="text-xs">%</span>
+                      </div>
                     </td>
                     {reversedDescriptors.map((descriptor, descIndex) => (
-                    <td key={descIndex} className="p-3 text-sm text-slate-700 border-x border-b border-slate-200 align-top">
-                        {descriptor.description}
-                    </td>
+                      <td key={descIndex} className="p-3 text-sm text-slate-700 border-x border-b border-slate-200 align-top">
+                        <textarea
+                          value={descriptor.description}
+                          onChange={(e) => {
+                            const updated = structuredClone(editedRubric);
+                            const originalIndex = item.descriptors.length - 1 - descIndex;
+                            updated.items[itemIndex].descriptors[originalIndex].description = e.target.value;
+                            setEditedRubric(updated);
+                          }}
+                          className="w-full h-full min-h-[120px] px-2 py-1 border border-slate-300 rounded text-sm bg-white"
+                        />
+                      </td>
                     ))}
-                </tr>
-              );
-            })}
-          </tbody>
+                  </tr>
+                );
+              })}
+            </tbody>
+          ) : (
+            <tbody>
+              {rubric.items.map((item, itemIndex) => {
+                const reversedDescriptors = [...item.descriptors].reverse();
+                return (
+                  <tr key={itemIndex} className="border-t border-slate-200">
+                      <td className="p-3 font-semibold text-sm text-slate-800 border-x border-b border-slate-200 align-top bg-slate-50">
+                          <div className="flex justify-between items-start gap-2">
+                            <span>{item.itemName}</span>
+                            <span className="font-bold text-slate-600 bg-slate-200 rounded px-2 py-0.5 text-xs flex-shrink-0">{item.weight}%</span>
+                          </div>
+                          {rubric.specificCriteria && rubric.specificCriteria.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                  {rubric.specificCriteria.map(criterion => {
+                                      const criterionNumber = criterion.match(/^[\d.]+/)?.[0] || '';
+                                      if (!criterionNumber) return null;
+                                      return (
+                                          <span key={criterion} className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded" title={criterion}>
+                                              {criterionNumber}
+                                          </span>
+                                      );
+                                  })}
+                              </div>
+                          )}
+                      </td>
+                      {reversedDescriptors.map((descriptor, descIndex) => (
+                      <td key={descIndex} className="p-3 text-sm text-slate-700 border-x border-b border-slate-200 align-top">
+                          {descriptor.description}
+                      </td>
+                      ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          )}
         </table>
       </div>
     </div>
