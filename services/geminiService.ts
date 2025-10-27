@@ -8,10 +8,11 @@ let ai: GoogleGenAI | null = null;
 
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        // Use VITE_GEMINI_API_KEY for Vite environments like Render.
+        // TEMP FIX: Use VITE_GEMINI_API_KEY for Render compatibility.
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
         if (!apiKey) {
+            // TEMP FIX: Updated error message for Render compatibility.
             throw new Error("La variable de entorno VITE_GEMINI_API_KEY no está configurada. Por favor, asegúrate de que esté disponible.");
         }
         ai = new GoogleGenAI({ apiKey });
@@ -149,6 +150,7 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
+    // TEMP FIX: Updated error message check for Render compatibility.
     if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
         throw error;
     }
@@ -247,6 +249,7 @@ export async function generateCriteriaSuggestions(
 
     } catch (error) {
         console.error("Error calling Gemini API for suggestions:", error);
+        // TEMP FIX: Updated error message check for Render compatibility.
         if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
             throw error;
         }

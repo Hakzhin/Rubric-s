@@ -30,6 +30,7 @@ const App: React.FC = () => {
       setRubricSaveCounter(c => c + 1);
     } catch (err) {
       console.error(err);
+      // TEMP FIX: Updated error message check for Render compatibility.
       if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
         setError(err.message);
       } else {

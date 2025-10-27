@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import type { Rubric } from '../types';
-import { DownloadIcon } from './icons/DownloadIcon';
+import { PrintIcon } from './icons/PrintIcon';
+import { ExcelIcon } from './icons/ExcelIcon';
 
 interface RubricDisplayProps {
   rubric: Rubric;
@@ -34,6 +35,68 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUp
   // Reverse headers and descriptors to display from highest to lowest
   const reversedHeaders = [...editedRubric.scaleHeaders].reverse();
   const rubricToDisplay = isEditMode ? editedRubric : rubric;
+
+  const handleExportToExcel = () => {
+    // Since XLSX is loaded from a CDN, we access it from the window object.
+    const XLSX = (window as any).XLSX;
+    if (typeof XLSX === 'undefined') {
+        console.error('XLSX library is not loaded.');
+        alert('Error: La librería de exportación a Excel no está disponible.');
+        return;
+    }
+
+    const currentRubric = isEditMode ? editedRubric : rubric;
+    const reversedHeaders = [...currentRubric.scaleHeaders].reverse();
+    
+    // Create the worksheet data starting with an empty row for the title
+    const sheetData: (string | number)[][] = [[]];
+
+    // Header row
+    const headerRow = ['Ítem de Evaluación (% Ponderación)', ...reversedHeaders.map(h => `${h.level.toUpperCase()} (${h.score})`)];
+    sheetData.push(headerRow);
+
+    // Data rows
+    currentRubric.items.forEach(item => {
+        const row = [`${item.itemName} (${item.weight}%)`];
+        const reversedDescriptors = [...item.descriptors].reverse();
+        reversedDescriptors.forEach(desc => {
+            row.push(desc.description);
+        });
+        sheetData.push(row);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(sheetData, {cellStyles: false});
+
+    // Add title in the first cell of the first row
+    ws['A1'] = { t: 's', v: currentRubric.title, s: { font: { sz: 16, bold: true } } };
+
+    // Merge the title cells
+    if (!ws['!merges']) ws['!merges'] = [];
+    ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: headerRow.length - 1 } });
+    
+    // Set column widths for better readability
+    const columnWidths = headerRow.map((_, index) => ({
+        wch: index === 0 ? 40 : 35
+    }));
+    ws['!cols'] = columnWidths;
+
+    // Set text wrapping for all data cells for better readability
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = 2; R <= range.e.r; ++R) { // Start from row 2 (data rows)
+      for (let C = 0; C <= range.e.c; ++C) {
+        const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+        if (ws[cellRef]) {
+          ws[cellRef].s = { alignment: { wrapText: true, vertical: 'top' } };
+        }
+      }
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Rúbrica');
+
+    const fileName = `${currentRubric.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
 
   const handleDownloadPreview = () => {
     const styleToString = (style: React.CSSProperties) => {
@@ -205,8 +268,8 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUp
   };
   
   return (
-    <div ref={rubricRef} className="bg-white p-6 md:p-8 rounded-lg shadow-lg border border-slate-200 animate-fade-in printable-area relative">
-      <div className="absolute top-4 right-4 flex items-center gap-2 no-print">
+    <div ref={rubricRef} className="bg-white p-6 md:p-8 rounded-lg shadow-lg border border-slate-200 animate-fade-in printable-area">
+      <div className="flex justify-end items-center gap-2 mb-4 no-print">
         <button 
           onClick={() => {
             if (isEditMode) {
@@ -222,12 +285,20 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUp
           {isEditMode ? '💾 Guardar' : '✏️ Editar'}
         </button>
         <button 
+          onClick={handleExportToExcel}
+          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-green-700 hover:bg-green-800 rounded-md shadow-sm transition-colors"
+          title="Exportar a Excel (.xlsx)"
+        >
+          <ExcelIcon />
+          <span>Excel</span>
+        </button>
+        <button 
           onClick={handleDownloadPreview}
           className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors"
-          title="Abrir en una nueva pestaña para descargar o imprimir"
+          title="Abrir en una nueva pestaña para imprimir o guardar como PDF"
         >
-          <DownloadIcon />
-          <span>Descargar</span>
+          <PrintIcon />
+          <span>Imprimir / PDF</span>
         </button>
       </div>
 

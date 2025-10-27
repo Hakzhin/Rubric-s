@@ -48,6 +48,7 @@ const CriteriaSection: React.FC<CriteriaSectionProps> = ({ title, criteria, onCr
             onCriteriaChange(suggestions); // FIX: Replace instead of append
         } catch (err) {
             console.error(err);
+            // TEMP FIX: Updated error message check for Render compatibility.
             if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
                 setError(err.message);
             } else {
@@ -176,6 +177,7 @@ export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading, ini
           setEvaluationCriteria(suggestions); // FIX: Replace instead of append
       } catch (err) {
           console.error(err);
+          // TEMP FIX: Updated error message check for Render compatibility.
           if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
               setSuggestionError(err.message);
           } else {
