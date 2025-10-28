@@ -1,14 +1,17 @@
 
 
+
 import { GoogleGenAI, Type } from "@google/genai";
 import type { FormData, Rubric, RubricItem, WeightedCriterion } from '../types';
+import { ETAPAS_EDUCATIVAS, ASIGNATURAS_POR_ETAPA } from '../constants';
 
 // Lazily initialize the AI client to avoid throwing an error on module load.
 let ai: GoogleGenAI | null = null;
 
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        const apiKey = process.env.API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+        // Support both Vite's env variables for platforms like Render and the standard process.env.
+        const apiKey = (import.meta.env as any).VITE_GEMINI_API_KEY || process.env.API_KEY;
 
         if (!apiKey) {
             throw new Error("error_api_key_not_set");
@@ -165,29 +168,28 @@ export async function generateCriteriaSuggestions(
     const { stage, course, subject, evaluationElement } = context;
 
     let prompt: string;
-    let responseSchema: any;
+    let config: any;
 
     if (criteriaType === 'specific') {
-        const typeDescription = 'Criterios de Evaluación del currículo oficial LOMLOE de la Región de Murcia';
-        const examples = 'Por ejemplo: "1.1. Comprender e interpretar el sentido global...", "3.2. Producir textos escritos y multimodales..."';
-        const taskInstruction = `Genera una lista de 4 o 5 **${typeDescription}** que sean los más relevantes para evaluar un "${evaluationElement}" en este contexto. **Debes incluir su numeración oficial** (ej: 1.1, 2.3, etc.) tal como aparece en el currículo.\n${examples}`;
-        
-        prompt = `Eres un asistente experto en el diseño de currículos educativos, especializado en la normativa de la Región de Murcia (Educarm) para la LOMLOE.
+        prompt = `Eres un asistente experto en el diseño de currículos educativos, especializado en la normativa LOMLOE de España.
 
         **Contexto:**
         - **Etapa Educativa:** ${stage}
         - **Asignatura:** ${subject}
         - **Curso:** ${course}
         - **Elemento a evaluar:** ${evaluationElement}
-    
+
         **Tarea:**
-        ${taskInstruction}
-    
-        Devuelve la respuesta estrictamente como un array JSON de strings. Cada string debe ser un criterio conciso y claro. No incluyas nada más en tu respuesta.`;
+        Tu tarea es buscar en la web, utilizando fuentes oficiales del gobierno de España (como educagob.educacionfpydeportes.gob.es o boletines oficiales), los **Criterios de Evaluación** oficiales del currículo LOMLOE para la asignatura y etapa especificadas.
+        Una vez encontrados, selecciona los 4 o 5 criterios más relevantes para evaluar un "${evaluationElement}".
+
+        **IMPORTANTE:** Tu respuesta DEBE ser únicamente un array JSON válido que contenga strings. No incluyas texto introductorio, explicaciones, ni \`\`\`json markdown. Solo el array.
+        Ejemplo de respuesta válida:
+        ["Criterio 1.1 completo y oficial.", "Criterio 2.3 completo y oficial."]`;
         
-        responseSchema = {
-            type: Type.ARRAY,
-            items: { type: Type.STRING }
+        config = {
+          tools: [{googleSearch: {}}],
+          temperature: 0.5,
         };
 
     } else { // criteriaType === 'evaluation'
@@ -208,7 +210,7 @@ export async function generateCriteriaSuggestions(
     
         Devuelve la respuesta estrictamente como un array JSON de objetos. Cada objeto debe tener una clave "name" (string) y "weight" (number). La suma de todos los "weight" debe ser 100. No incluyas nada más en tu respuesta.`;
 
-        responseSchema = {
+        const responseSchema = {
             type: Type.ARRAY,
             items: {
                 type: Type.OBJECT,
@@ -219,6 +221,12 @@ export async function generateCriteriaSuggestions(
                 required: ['name', 'weight']
             }
         };
+
+        config = {
+          responseMimeType: 'application/json',
+          responseSchema: responseSchema,
+          temperature: 0.7,
+        };
     }
 
     try {
@@ -226,13 +234,21 @@ export async function generateCriteriaSuggestions(
         const response = await aiClient.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
-            config: {
-                responseMimeType: 'application/json',
-                responseSchema: responseSchema,
-                temperature: 0.7,
-            }
+            config: config,
         });
-        const jsonText = response.text.trim();
+        
+        let jsonText = response.text.trim();
+
+        if (criteriaType === 'specific') {
+            const jsonMatch = jsonText.match(/(\[[\s\S]*\])/);
+            if (jsonMatch && jsonMatch[1]) {
+                jsonText = jsonMatch[1];
+            } else {
+                console.error("AI response did not contain a valid JSON array for 'specific' criteria.");
+                throw new Error("error_invalid_ai_response");
+            }
+        }
+
         const parsedData = JSON.parse(jsonText);
 
         if (criteriaType === 'specific') {
@@ -252,8 +268,8 @@ export async function generateCriteriaSuggestions(
         if (error instanceof Error && error.message.includes('API_KEY')) {
             throw new Error("error_api_key_not_set");
         }
-        if (error instanceof Error) {
-            throw error;
+        if (error instanceof Error && error.message.includes('invalid_ai_response')) {
+             throw error;
         }
         throw new Error("error_generating_suggestions");
     }

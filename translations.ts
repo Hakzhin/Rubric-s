@@ -70,15 +70,16 @@ export const translations = {
     error_api_key_not_set: 'La variable de entorno API_KEY o VITE_GEMINI_API_KEY no está configurada. Por favor, asegúrate de que una de ellas esté disponible.',
     error_invalid_ai_response: 'Formato de respuesta de la IA inválido.',
     error_generating_rubric_from_service: 'No se pudo generar la rúbrica desde el servicio de IA.',
-    error_getting_suggestions: 'Error al obtener sugerencias.',
+    error_getting_suggestions: 'Error al obtener sugerencias. La búsqueda en la web puede haber fallado.',
     error_generating_suggestions: 'No se pudieron generar las sugerencias.',
 
     // FIX: Add missing translation keys for the GeminiChat component.
-    gemini_chat_title: 'Chatea con Gemini',
-    gemini_chat_description: 'Haz preguntas sobre la rúbrica o pide ayuda.',
-    gemini_chat_thinking: 'Gemini está pensando...',
-    gemini_chat_placeholder: 'Escribe tu pregunta aquí...',
-    gemini_chat_error: 'Hubo un error al contactar a Gemini.',
+    // FIX: Quote object keys to fix syntax errors.
+    'gemini_chat_title': 'Chatea con Gemini',
+    'gemini_chat_description': 'Haz preguntas sobre la rúbrica o pide ayuda.',
+    'gemini_chat_thinking': 'Gemini está pensando...',
+    'gemini_chat_placeholder': 'Escribe tu pregunta aquí...',
+    'gemini_chat_error': 'Hubo un error al contactar a Gemini.',
   },
   en: {
     // App.tsx
@@ -151,15 +152,16 @@ export const translations = {
     error_api_key_not_set: 'The API_KEY or VITE_GEMINI_API_KEY environment variable is not set. Please make sure one of them is available.',
     error_invalid_ai_response: 'Invalid response format from AI.',
     error_generating_rubric_from_service: 'Could not generate the rubric from the AI service.',
-    error_getting_suggestions: 'Error getting suggestions.',
+    error_getting_suggestions: 'Error getting suggestions. The web search may have failed.',
     error_generating_suggestions: 'Could not generate suggestions.',
 
     // FIX: Add missing translation keys for the GeminiChat component.
-    gemini_chat_title: 'Chat with Gemini',
-    gemini_chat_description: 'Ask questions about the rubric or for help.',
-    gemini_chat_thinking: 'Gemini is thinking...',
-    gemini_chat_placeholder: 'Type your question here...',
-    gemini_chat_error: 'There was an error contacting Gemini.',
+    // FIX: Quote object keys to fix syntax errors.
+    'gemini_chat_title': 'Chat with Gemini',
+    'gemini_chat_description': 'Ask questions about the rubric or for help.',
+    'gemini_chat_thinking': 'Gemini is thinking...',
+    'gemini_chat_placeholder': 'Type your question here...',
+    'gemini_chat_error': 'There was an error contacting Gemini.',
   },
   fr: {
     // App.tsx
@@ -232,15 +234,16 @@ export const translations = {
     error_api_key_not_set: "La variable d'environnement API_KEY ou VITE_GEMINI_API_KEY n'est pas configurée. Veuillez vous assurer que l'une d'entre elles est disponible.",
     error_invalid_ai_response: "Format de réponse de l'IA invalide.",
     error_generating_rubric_from_service: "Impossible de générer la grille depuis le service d'IA.",
-    error_getting_suggestions: 'Erreur lors de l\'obtention des suggestions.',
+    error_getting_suggestions: 'Erreur lors de l\'obtention des suggestions. La recherche sur le web a peut-être échoué.',
     error_generating_suggestions: 'Impossible de générer les suggestions.',
     
     // FIX: Add missing translation keys for the GeminiChat component.
-    gemini_chat_title: 'Discuter avec Gemini',
-    gemini_chat_description: 'Posez des questions sur la grille ou demandez de l\'aide.',
-    gemini_chat_thinking: 'Gemini réfléchit...',
-    gemini_chat_placeholder: 'Tapez votre question ici...',
-    gemini_chat_error: 'Une erreur est survenue en contactant Gemini.',
+    // FIX: Quote object keys to fix syntax errors.
+    'gemini_chat_title': 'Discuter avec Gemini',
+    'gemini_chat_description': 'Posez des questions sur la grille ou demandez de l\'aide.',
+    'gemini_chat_thinking': 'Gemini réfléchit...',
+    'gemini_chat_placeholder': 'Tapez votre question ici...',
+    'gemini_chat_error': 'Une erreur est survenue en contactant Gemini.',
   }
 };
 
