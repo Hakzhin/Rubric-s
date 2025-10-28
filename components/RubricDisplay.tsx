@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import type { Rubric } from '../types';
 import { PrintIcon } from './icons/PrintIcon';
 import { ExcelIcon } from './icons/ExcelIcon';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface RubricDisplayProps {
   rubric: Rubric;
@@ -24,6 +25,7 @@ const getHeaderStyle = (index: number, total: number): React.CSSProperties => {
 };
 
 export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUpdate }) => {
+  const { t } = useLanguage();
   const rubricRef = useRef<HTMLDivElement>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedRubric, setEditedRubric] = useState<Rubric>(rubric);
@@ -73,7 +75,7 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUp
     const sheetData: (string | number)[][] = [[]];
 
     // Header row
-    const headerRow = ['Ítem de Evaluación (% Ponderación)', ...reversedHeaders.map(h => `${h.level.toUpperCase()} (${h.score})`)];
+    const headerRow = [`${t('evaluation_item')} (% Ponderación)`, ...reversedHeaders.map(h => `${h.level.toUpperCase()} (${h.score})`)];
     sheetData.push(headerRow);
 
     // Data rows
@@ -132,7 +134,7 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUp
     const tableHeader = `
       <thead>
         <tr>
-          <th style="padding: 12px; font-weight: 600; text-align: left; border: 1px solid #e2e8f0; width: 25%; background-color: #f8fafc; vertical-align: top;">Ítem de Evaluación</th>
+          <th style="padding: 12px; font-weight: 600; text-align: left; border: 1px solid #e2e8f0; width: 25%; background-color: #f8fafc; vertical-align: top;">${t('evaluation_item')}</th>
           ${reversedHeaders.map((header, index) => `
             <th style="padding: 12px; font-weight: 700; text-align: center; border: 1px solid #e2e8f0; ${styleToString(getHeaderStyle(index, reversedHeaders.length))}">
               <div style="font-size: 1rem;">${header.level.toUpperCase()}</div>
@@ -289,7 +291,7 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUp
   };
   
   return (
-    <div ref={rubricRef} className="bg-white p-6 md:p-8 rounded-lg shadow-lg border border-slate-200 animate-fade-in printable-area">
+    <div ref={rubricRef} className="bg-slate-100 p-6 md:p-8 rounded-lg shadow-lg border border-slate-200 animate-fade-in printable-area">
       <div className="flex justify-end items-center gap-2 mb-4 no-print">
         <button 
           onClick={() => {
@@ -301,34 +303,34 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUp
           className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white rounded-md shadow-sm transition-colors ${
             isEditMode ? 'bg-green-600 hover:bg-green-700' : 'bg-orange-500 hover:bg-orange-600'
           }`}
-          title={isEditMode ? "Guardar cambios" : "Editar rúbrica"}
+          title={isEditMode ? t('save_changes') : t('edit_rubric')}
         >
-          {isEditMode ? '💾 Guardar' : '✏️ Editar'}
+          {isEditMode ? `💾 ${t('save')}` : `✏️ ${t('edit')}`}
         </button>
         <button 
           onClick={handleExportToExcel}
           className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-green-700 hover:bg-green-800 rounded-md shadow-sm transition-colors"
-          title="Exportar a Excel (.xlsx)"
+          title={t('export_to_excel')}
         >
           <ExcelIcon />
-          <span>Excel</span>
+          <span>{t('excel')}</span>
         </button>
         <button 
           onClick={handleDownloadPreview}
           className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors"
-          title="Abrir en una nueva pestaña para imprimir o guardar como PDF"
+          title={t('print_or_pdf_title')}
         >
           <PrintIcon />
-          <span>Imprimir / PDF</span>
+          <span>{t('print_pdf')}</span>
         </button>
       </div>
 
       <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-slate-800">{rubricToDisplay.title}</h2>
       <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse">
+        <table className="min-w-full border-collapse bg-white">
           <thead>
             <tr>
-              <th className="p-3 font-semibold text-left text-sm text-slate-700 border border-slate-200 w-1/4 bg-slate-50 align-top">Ítem de Evaluación</th>
+              <th className="p-3 font-semibold text-left text-sm text-slate-700 border border-slate-200 w-1/4 bg-slate-50 align-top">{t('evaluation_item')}</th>
               {reversedHeaders.map((header, index) => (
                 <th 
                     key={header.level} 
@@ -371,7 +373,7 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUp
                         rows={2}
                       />
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs text-slate-600">Peso:</span>
+                        <span className="text-xs text-slate-600">{t('weight')}:</span>
                         <input
                           type="number"
                           min="0"

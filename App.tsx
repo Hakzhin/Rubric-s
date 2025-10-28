@@ -9,8 +9,11 @@ import { SavedRubrics } from './components/SavedRubrics';
 import { generateRubric } from './services/geminiService';
 import { saveRubricToStorage, type SavedRubric } from './utils/rubricStorage';
 import type { Rubric, FormData } from './types';
+import { useLanguage } from './hooks/useLanguage';
+import type { TranslationKey } from './translations';
 
 const App: React.FC = () => {
+  const { t } = useLanguage();
   const [rubric, setRubric] = useState<Rubric | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,16 +33,18 @@ const App: React.FC = () => {
       setRubricSaveCounter(c => c + 1);
     } catch (err) {
       console.error(err);
-      // Fix: Updated error message check to look for API_KEY, consistent with guideline compliance.
-      if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
-        setError(err.message);
+      if (err instanceof Error) {
+        const key = err.message as TranslationKey;
+        const translatedError = t(key);
+        // Fallback if the key doesn't exist
+        setError(translatedError === key ? t('error_generating_rubric') : translatedError);
       } else {
-        setError('Hubo un error al generar la rúbrica. Por favor, inténtalo de nuevo.');
+        setError(t('error_generating_rubric'));
       }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
   
   const handleLoadRubric = (saved: SavedRubric) => {
       setRubric(saved.rubric);
@@ -85,9 +90,9 @@ const App: React.FC = () => {
           </div>
           <div className="mt-8">
             {isLoading && (
-              <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-md border border-slate-200 no-print">
+              <div className="flex flex-col items-center justify-center p-8 bg-slate-100 rounded-lg shadow-md border border-slate-200 no-print">
                 <LoadingSpinner />
-                <p className="mt-4 text-slate-600">Generando rúbrica, por favor espera...</p>
+                <p className="mt-4 text-slate-600">{t('generating_rubric_please_wait')}</p>
               </div>
             )}
             {error && (
@@ -97,16 +102,16 @@ const App: React.FC = () => {
             )}
             {rubric && !isLoading && <RubricDisplay rubric={rubric} onRubricUpdate={handleRubricUpdate} />}
              {!rubric && !isLoading && !error && (
-              <div className="text-center p-8 bg-white rounded-lg shadow-md border border-slate-200 no-print">
-                <h2 className="text-xl font-semibold text-slate-700">Comienza a diseñar tu rúbrica</h2>
-                <p className="mt-2 text-slate-500">Completa el formulario de arriba para generar una rúbrica de evaluación personalizada con IA.</p>
+              <div className="text-center p-8 bg-slate-100 rounded-lg shadow-md border border-slate-200 no-print">
+                <h2 className="text-xl font-semibold text-slate-700">{t('start_designing_rubric')}</h2>
+                <p className="mt-2 text-slate-500">{t('complete_form_for_rubric')}</p>
               </div>
             )}
           </div>
         </div>
       </main>
       <footer className="text-center p-4 text-slate-400 text-sm no-print">
-        <p>Desarrollado con IA por Rúbric@s EBP</p>
+        <p>{t('developed_by')}</p>
       </footer>
     </div>
   );

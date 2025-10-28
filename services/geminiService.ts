@@ -8,12 +8,10 @@ let ai: GoogleGenAI | null = null;
 
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        // Fix: Per Gemini API guidelines, the API key must be read from process.env.API_KEY.
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        const apiKey = process.env.API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
 
         if (!apiKey) {
-            // Fix: Updated error message to reflect the change to process.env.API_KEY.
-            throw new Error("La variable de entorno VITE_GEMINI_API_KEY no está configurada. Por favor, asegúrate de que esté disponible.");
+            throw new Error("error_api_key_not_set");
         }
         ai = new GoogleGenAI({ apiKey });
     }
@@ -128,7 +126,7 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
     const parsedData = JSON.parse(jsonText);
 
     if (!parsedData.title || !Array.isArray(parsedData.items)) {
-        throw new Error("Formato de respuesta de la IA inválido.");
+        throw new Error("error_invalid_ai_response");
     }
 
     // Add weights back to the items from the original form data
@@ -150,11 +148,13 @@ export async function generateRubric(formData: FormData): Promise<Rubric> {
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    // Fix: Updated error message check to look for API_KEY, consistent with guideline compliance.
-    if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
-        throw error;
+    if (error instanceof Error && error.message.includes('API_KEY')) {
+        throw new Error("error_api_key_not_set");
     }
-    throw new Error("No se pudo generar la rúbrica desde el servicio de IA.");
+    if (error instanceof Error) {
+        throw error; // Re-throw the original error which might be a translation key
+    }
+    throw new Error("error_generating_rubric_from_service");
   }
 }
 
@@ -237,22 +237,46 @@ export async function generateCriteriaSuggestions(
 
         if (criteriaType === 'specific') {
              if (!Array.isArray(parsedData) || !parsedData.every(item => typeof item === 'string')) {
-                throw new Error("Invalid format from AI for suggestions.");
+                throw new Error("error_invalid_ai_response");
             }
             return parsedData;
         } else {
              if (!Array.isArray(parsedData) || !parsedData.every(item => typeof item === 'object' && typeof item.name === 'string' && typeof item.weight === 'number')) {
-                throw new Error("Invalid format from AI for weighted suggestions.");
+                throw new Error("error_invalid_ai_response");
             }
             return parsedData;
         }
 
     } catch (error) {
         console.error("Error calling Gemini API for suggestions:", error);
-        // Fix: Updated error message check to look for API_KEY, consistent with guideline compliance.
-        if (error instanceof Error && error.message.includes('VITE_GEMINI_API_KEY')) {
+        if (error instanceof Error && error.message.includes('API_KEY')) {
+            throw new Error("error_api_key_not_set");
+        }
+        if (error instanceof Error) {
             throw error;
         }
-        throw new Error("No se pudieron generar las sugerencias.");
+        throw new Error("error_generating_suggestions");
+    }
+}
+
+// FIX: Add generateChatResponse function to be used by the GeminiChat component.
+export async function generateChatResponse(prompt: string): Promise<string> {
+    try {
+        const aiClient = getAiClient();
+        const response = await aiClient.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                systemInstruction: 'You are an expert pedagogical assistant. Answer questions about evaluation rubrics concisely and helpfully.',
+                temperature: 0.7,
+            },
+        });
+        return response.text.trim();
+    } catch (error) {
+        console.error("Error calling Gemini API for chat:", error);
+        if (error instanceof Error && error.message.includes('API_KEY')) {
+            throw new Error("error_api_key_not_set");
+        }
+        throw new Error("gemini_chat_error");
     }
 }

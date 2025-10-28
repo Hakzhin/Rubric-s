@@ -5,7 +5,9 @@ import { ETAPAS_EDUCATIVAS, CURSOS_POR_ETAPA, ASIGNATURAS_POR_ETAPA } from '../c
 import { generateCriteriaSuggestions } from '../services/geminiService';
 import type { FormData, WeightedCriterion } from '../types';
 import { GraduationCapIcon } from './icons/GraduationCapIcon';
-import { SparklesIcon } from './icons/SparklesIcon';
+import { GeminiIcon } from './icons/GeminiIcon';
+import { useLanguage } from '../hooks/useLanguage';
+import type { TranslationKey } from '../translations';
 
 interface RubricFormProps {
   onSubmit: (formData: FormData) => void;
@@ -25,6 +27,7 @@ interface CriteriaSectionProps {
 }
 
 const CriteriaSection: React.FC<CriteriaSectionProps> = ({ title, criteria, onCriteriaChange, onSuggest, placeholder, disabled }) => {
+    const { t } = useLanguage();
     const [newItem, setNewItem] = useState('');
     const [isSuggesting, setIsSuggesting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -48,11 +51,12 @@ const CriteriaSection: React.FC<CriteriaSectionProps> = ({ title, criteria, onCr
             onCriteriaChange(suggestions); // FIX: Replace instead of append
         } catch (err) {
             console.error(err);
-            // Fix: Updated error message check to look for API_KEY, consistent with guideline compliance.
-            if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
-                setError(err.message);
+            if (err instanceof Error) {
+                const key = err.message as TranslationKey;
+                const translatedError = t(key);
+                setError(translatedError === key ? t('error_getting_suggestions') : translatedError);
             } else {
-                setError('Error al obtener sugerencias.');
+                setError(t('error_getting_suggestions'));
             }
         } finally {
             setIsSuggesting(false);
@@ -64,20 +68,20 @@ const CriteriaSection: React.FC<CriteriaSectionProps> = ({ title, criteria, onCr
             <label className="block text-sm font-medium text-slate-700 mb-2">{title}</label>
             <div className="flex flex-wrap gap-2 mb-2 p-2 border border-slate-200 rounded-md min-h-[42px] bg-slate-50">
                 {criteria.map((item) => (
-                    <span key={item} className="flex items-center gap-1.5 bg-sky-100 text-sky-800 text-sm font-medium px-2.5 py-1 rounded-full animate-fade-in">
+                    <span key={item} className="flex items-center gap-1.5 bg-sky-100 text-sky-800 text-sm font-medium px-2.5 py-1 rounded-full animate-swoop-in-item">
                         {item}
-                        <button type="button" onClick={() => handleRemoveItem(item)} className="text-sky-500 hover:text-sky-800 font-bold text-lg leading-none" aria-label={`Quitar ${item}`} disabled={disabled}>&times;</button>
+                        <button type="button" onClick={() => handleRemoveItem(item)} className="text-sky-500 hover:text-sky-800 font-bold text-lg leading-none" aria-label={`${t('remove_item')} ${item}`} disabled={disabled}>&times;</button>
                     </span>
                 ))}
             </div>
             <div className="flex gap-2">
                 <input type="text" value={newItem} onChange={(e) => setNewItem(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddItem(); } }} placeholder={placeholder} className="flex-grow p-2 bg-white text-slate-900 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-slate-200" disabled={disabled} />
-                <button type="button" onClick={handleAddItem} className="px-4 py-2 text-sm font-semibold text-white bg-slate-600 rounded-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:bg-slate-400" disabled={disabled}>Añadir</button>
+                <button type="button" onClick={handleAddItem} className="px-4 py-2 text-sm font-semibold text-white bg-slate-600 rounded-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:bg-slate-400" disabled={disabled}>{t('add')}</button>
             </div>
              <div className="mt-2 text-right">
                 <button type="button" onClick={handleSuggestClick} disabled={isSuggesting || disabled} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-100 rounded-md hover:bg-indigo-200 disabled:opacity-50 transition-colors">
-                    <SparklesIcon />
-                    {isSuggesting ? 'Sugiriendo...' : 'Sugerir con IA'}
+                    <GeminiIcon />
+                    {isSuggesting ? t('suggesting') : t('suggest_with_ai')}
                 </button>
                 {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
             </div>
@@ -87,6 +91,7 @@ const CriteriaSection: React.FC<CriteriaSectionProps> = ({ title, criteria, onCr
 
 
 export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading, initialData, onReset }) => {
+  const { t } = useLanguage();
   const [stage, setStage] = useState<string>('');
   const [course, setCourse] = useState<string>('');
   const [subject, setSubject] = useState<string>('');
@@ -177,11 +182,12 @@ export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading, ini
           setEvaluationCriteria(suggestions); // FIX: Replace instead of append
       } catch (err) {
           console.error(err);
-          // Fix: Updated error message check to look for API_KEY, consistent with guideline compliance.
-          if (err instanceof Error && err.message.includes('VITE_GEMINI_API_KEY')) {
-              setSuggestionError(err.message);
+          if (err instanceof Error) {
+              const key = err.message as TranslationKey;
+              const translatedError = t(key);
+              setSuggestionError(translatedError === key ? t('error_getting_suggestions') : translatedError);
           } else {
-              setSuggestionError('Error al obtener sugerencias.');
+              setSuggestionError(t('error_getting_suggestions'));
           }
       } finally {
           setIsSuggesting(false);
@@ -246,65 +252,65 @@ export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading, ini
 
   return (
     <>
-      <div className="p-6 md:p-8 bg-white rounded-lg shadow-lg border border-slate-200">
+      <div className="p-6 md:p-8 bg-slate-100 rounded-lg shadow-lg border border-slate-200">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-800">Configuración de la Rúbrica</h2>
+          <h2 className="text-2xl font-bold text-slate-800">{t('rubric_config')}</h2>
           <button
             onClick={handleResetForm}
             type="button"
             className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 bg-white border-2 border-slate-300 hover:bg-slate-50 hover:border-slate-400 rounded-lg shadow-sm transition-colors"
-            title="Reiniciar formulario y empezar de nuevo"
+            title={t('reset_form_title')}
           >
-            🔄 Reiniciar
+            🔄 {t('reset')}
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label htmlFor="stage" className="block text-sm font-medium text-slate-700 mb-1">Etapa Educativa</label>
+              <label htmlFor="stage" className="block text-sm font-medium text-slate-700 mb-1">{t('educational_stage')}</label>
               <select id="stage" value={stage} onChange={(e) => setStage(e.target.value)} className="w-full p-2 bg-white text-slate-900 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                <option value="" disabled>Selecciona una etapa...</option>
+                <option value="" disabled>{t('select_stage')}</option>
                 {ETAPAS_EDUCATIVAS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </div>
             <div>
-              <label htmlFor="subject" className="block text-sm font-medium text-slate-700 mb-1">Asignatura</label>
+              <label htmlFor="subject" className="block text-sm font-medium text-slate-700 mb-1">{t('subject')}</label>
               <select id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} disabled={!stage} className="w-full p-2 bg-white text-slate-900 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-slate-200">
-                <option value="" disabled>Selecciona una asignatura...</option>
+                <option value="" disabled>{t('select_subject')}</option>
                 {subjectOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </div>
             <div>
-              <label htmlFor="course" className="block text-sm font-medium text-slate-700 mb-1">Curso</label>
+              <label htmlFor="course" className="block text-sm font-medium text-slate-700 mb-1">{t('course')}</label>
               <select id="course" value={course} onChange={(e) => setCourse(e.target.value)} disabled={!stage} className="w-full p-2 bg-white text-slate-900 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-slate-200">
-                <option value="" disabled>Selecciona un curso...</option>
+                <option value="" disabled>{t('select_course')}</option>
                 {courseOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </div>
           </div>
 
           <div>
-              <label htmlFor="evaluationElement" className="block text-sm font-medium text-slate-700 mb-1">Elemento a evaluar</label>
-              <input type="text" id="evaluationElement" value={evaluationElement} onChange={(e) => setEvaluationElement(e.target.value)} placeholder="Ej: un cuaderno, un debate, la participación en clase..." className="w-full p-2 bg-white text-slate-900 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" required />
+              <label htmlFor="evaluationElement" className="block text-sm font-medium text-slate-700 mb-1">{t('element_to_evaluate')}</label>
+              <input type="text" id="evaluationElement" value={evaluationElement} onChange={(e) => setEvaluationElement(e.target.value)} placeholder={t('element_to_evaluate_placeholder')} className="w-full p-2 bg-white text-slate-900 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" required />
           </div>
 
           <hr/>
           
           <CriteriaSection 
-              title="Criterios de Evaluación (Currículo LOMLOE)"
+              title={t('evaluation_criteria_lomloe')}
               criteria={specificCriteria}
               onCriteriaChange={setSpecificCriteria}
               onSuggest={() => getSuggestions('specific') as Promise<string[]>}
-              placeholder="Añadir criterio con numeración (ej: 1.1)..."
+              placeholder={t('add_criteria_placeholder')}
               disabled={!isContextSet}
           />
 
           {/* Weighted Criteria Section */}
           <div className={!isContextSet ? 'opacity-50' : ''}>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Aspectos Específicos a Evaluar y Ponderación</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">{t('specific_aspects_to_evaluate')}</label>
               <div className="space-y-2 mb-2">
                   {evaluationCriteria.map((criterion) => (
-                      <div key={criterion.name} className="flex items-center gap-2 p-2 border border-slate-200 rounded-md bg-slate-50 animate-fade-in">
+                      <div key={criterion.name} className="flex items-center gap-2 p-2 border border-slate-200 rounded-md bg-slate-50 animate-swoop-in-item">
                         <span className="flex-grow text-sm text-slate-800">{criterion.name}</span>
                         <input 
                           type="number" 
@@ -314,22 +320,22 @@ export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading, ini
                           placeholder="%"
                           disabled={!isContextSet}
                         />
-                          <button type="button" onClick={() => handleRemoveWeightedCriterion(criterion.name)} className="text-red-500 hover:text-red-800 font-bold text-lg leading-none" aria-label={`Quitar ${criterion.name}`} disabled={!isContextSet}>&times;</button>
+                          <button type="button" onClick={() => handleRemoveWeightedCriterion(criterion.name)} className="text-red-500 hover:text-red-800 font-bold text-lg leading-none" aria-label={`${t('remove_item')} ${criterion.name}`} disabled={!isContextSet}>&times;</button>
                       </div>
                   ))}
               </div>
               <div className="flex gap-2">
-                  <input type="text" value={newCriterionName} onChange={(e) => setNewCriterionName(e.target.value)} placeholder="Añadir aspecto observable (ej: Limpieza)..." className="flex-grow p-2 bg-white text-slate-900 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-slate-200" disabled={!isContextSet}/>
+                  <input type="text" value={newCriterionName} onChange={(e) => setNewCriterionName(e.target.value)} placeholder={t('add_observable_aspect_placeholder')} className="flex-grow p-2 bg-white text-slate-900 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-slate-200" disabled={!isContextSet}/>
                   <input type="number" value={newCriterionWeight} onChange={(e) => setNewCriterionWeight(e.target.value)} placeholder="%" className="w-24 p-2 bg-white text-slate-900 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-slate-200" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddWeightedCriterion(); } }} disabled={!isContextSet}/>
-                  <button type="button" onClick={handleAddWeightedCriterion} className="px-4 py-2 text-sm font-semibold text-white bg-slate-600 rounded-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:bg-slate-400" disabled={!isContextSet}>Añadir</button>
+                  <button type="button" onClick={handleAddWeightedCriterion} className="px-4 py-2 text-sm font-semibold text-white bg-slate-600 rounded-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:bg-slate-400" disabled={!isContextSet}>{t('add')}</button>
               </div>
               <div className="flex justify-between items-center mt-2">
                   <p className={`text-sm font-semibold ${isWeightOk ? 'text-green-600' : 'text-red-600'}`}>
-                      Total ponderado: {totalWeight}%
+                      {t('weighted_total')}: {totalWeight}%
                   </p>
                   <button type="button" onClick={handleSuggestWeightedCriteria} disabled={isSuggesting || !isContextSet} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-100 rounded-md hover:bg-indigo-200 disabled:opacity-50 transition-colors">
-                      <SparklesIcon />
-                      {isSuggesting ? 'Sugiriendo...' : 'Sugerir con IA'}
+                      <GeminiIcon />
+                      {isSuggesting ? t('suggesting') : t('suggest_with_ai')}
                   </button>
               </div>
               {suggestionError && <p className="text-xs text-red-600 mt-1 text-right">{suggestionError}</p>}
@@ -339,28 +345,28 @@ export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading, ini
           
           <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Niveles de desempeño (personalizables)
+                  {t('performance_levels_customizable')}
               </label>
               <div className="flex flex-wrap gap-2 mb-2 p-2 border border-slate-200 rounded-md min-h-[42px] bg-slate-50">
                   {levels.map((level) => (
                   <span key={level} className="flex items-center gap-1.5 bg-indigo-100 text-indigo-800 text-sm font-medium px-2.5 py-1 rounded-full animate-fade-in">
                       {level}
-                      <button type="button" onClick={() => handleRemoveLevel(level)} className="text-indigo-500 hover:text-indigo-800 font-bold text-lg leading-none" aria-label={`Quitar ${level}`}>&times;</button>
+                      <button type="button" onClick={() => handleRemoveLevel(level)} className="text-indigo-500 hover:text-indigo-800 font-bold text-lg leading-none" aria-label={`${t('remove_item')} ${level}`}>&times;</button>
                   </span>
                   ))}
               </div>
               <div className="flex gap-2">
-                  <input type="text" value={newLevel} onChange={(e) => setNewLevel(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddLevel(); } }} placeholder="Añadir nuevo nivel..." className="flex-grow p-2 bg-white text-slate-900 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" />
-                  <button type="button" onClick={handleAddLevel} className="px-4 py-2 text-sm font-semibold text-white bg-slate-600 rounded-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500">Añadir</button>
+                  <input type="text" value={newLevel} onChange={(e) => setNewLevel(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddLevel(); } }} placeholder={t('add_new_level_placeholder')} className="flex-grow p-2 bg-white text-slate-900 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" />
+                  <button type="button" onClick={handleAddLevel} className="px-4 py-2 text-sm font-semibold text-white bg-slate-600 rounded-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500">{t('add')}</button>
               </div>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-4">
             <button type="submit" disabled={isLoading || !isFormValid} className="w-full flex justify-center items-center gap-2 p-3 text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors duration-200">
               <GraduationCapIcon />
-              {isLoading ? 'Generando...' : 'Generar Rúbrica'}
+              {isLoading ? t('generating') : t('generate_rubric')}
             </button>
-            {!isWeightOk && evaluationCriteria.length > 0 && <p className="text-xs text-center text-red-600 mt-2">La ponderación total debe ser exactamente 100% para poder generar la rúbrica.</p>}
+            {!isWeightOk && evaluationCriteria.length > 0 && <p className="text-xs text-center text-red-600 mt-2">{t('weighting_must_be_100')}</p>}
           </div>
         </form>
       </div>
@@ -373,23 +379,23 @@ export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading, ini
               </div>
               <div className="flex-grow">
                 <h3 className="text-lg font-bold text-slate-800 mb-2">
-                  ¿Reiniciar formulario?
+                  {t('reset_form_modal_title')}
                 </h3>
                 <p className="text-slate-600 text-sm mb-6">
-                  Se perderán todos los datos del formulario y la rúbrica generada. Esta acción no se puede deshacer.
+                  {t('reset_form_modal_text')}
                 </p>
                 <div className="flex gap-3 justify-end">
                   <button
                     onClick={cancelReset}
                     className="px-4 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium transition-colors"
                   >
-                    Cancelar
+                    {t('cancel')}
                   </button>
                   <button
                     onClick={confirmReset}
                     className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors"
                   >
-                    Sí, reiniciar
+                    {t('yes_reset')}
                   </button>
                 </div>
               </div>
