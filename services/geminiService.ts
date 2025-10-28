@@ -1,6 +1,3 @@
-
-
-
 import { GoogleGenAI, Type } from "@google/genai";
 import type { FormData, Rubric, RubricItem, WeightedCriterion } from '../types';
 import { ETAPAS_EDUCATIVAS, ASIGNATURAS_POR_ETAPA } from '../constants';
@@ -10,8 +7,9 @@ let ai: GoogleGenAI | null = null;
 
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        // Support both Vite's env variables for platforms like Render and the standard process.env.
-        const apiKey = (import.meta.env as any).VITE_GEMINI_API_KEY || process.env.API_KEY;
+        // Support VITE_GEMINI_API_KEY for Vite-based environments like Render,
+        // with a fallback to process.env.API_KEY for other environments.
+        const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || process.env.API_KEY;
 
         if (!apiKey) {
             throw new Error("error_api_key_not_set");
