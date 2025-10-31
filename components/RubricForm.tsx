@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { ETAPAS_EDUCATIVAS, CURSOS_POR_ETAPA, ASIGNATURAS_POR_ETAPA } from '../constants';
 import { generateCriteriaSuggestions } from '../services/geminiService';
@@ -258,7 +259,7 @@ export const RubricForm: React.FC<RubricFormProps> = ({ onSubmit, isLoading, ini
           <button
             onClick={handleResetForm}
             type="button"
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 bg-white border-2 border-slate-300 hover:bg-slate-50 hover:border-slate-400 rounded-lg shadow-sm transition-colors"
+            className="flex items-center gap-2 px-3 py-1 text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 hover:border-slate-400 rounded-lg shadow-sm transition-colors"
             title={t('reset_form_title')}
           >
             🔄 {t('reset')}
