@@ -48,7 +48,9 @@ export const ASIGNATURAS_POR_ETAPA: Record<string, { value: string; label: strin
     secundaria: [
       { value: 'lengua', label: 'Lengua Castellana y Literatura' },
       { value: 'matematicas', label: 'Matemáticas' },
+      { value: 'lengua-extranjera', label: 'Lengua Extranjera' },
       { value: 'ingles', label: 'Lengua Extranjera: Inglés' },
+      { value: 'frances', label: 'Lengua Extranjera: Francés' },
       { value: 'geografia-historia', label: 'Geografía e Historia' },
       { value: 'biologia-geologia', label: 'Biología y Geología' },
       { value: 'fisica-quimica', label: 'Física y Química' },
@@ -56,10 +58,10 @@ export const ASIGNATURAS_POR_ETAPA: Record<string, { value: string; label: strin
       { value: 'educacion-fisica', label: 'Educación Física' },
       { value: 'musica', label: 'Música' },
       { value: 'plastica', label: 'Educación Plástica, Visual y Audiovisual' },
-      { value: 'frances', label: 'Lengua Extranjera: Francés' },
       { value: 'latin', label: 'Latín' },
       { value: 'cultura-clasica', label: 'Cultura Clásica' },
       { value: 'economia', label: 'Economía y Emprendimiento' },
+      { value: 'valores-civicos-eticos', label: 'Valores Cívicos y Éticos' },
       { value: 'religion', label: 'Religión' },
     ],
   };

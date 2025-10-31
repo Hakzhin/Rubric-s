@@ -1,17 +1,19 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { FormData, Rubric, RubricItem, WeightedCriterion } from '../types';
-import { ETAPAS_EDUCATIVAS, ASIGNATURAS_POR_ETAPA } from '../constants';
+import { ASIGNATURAS_POR_ETAPA } from '../constants';
+import { CURRICULUM_DATA } from '../curriculumData';
 
 // Lazily initialize the AI client to avoid throwing an error on module load.
 let ai: GoogleGenAI | null = null;
 
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        // Support VITE_GEMINI_API_KEY for Vite-based environments like Render,
-        // with a fallback to process.env.API_KEY for other environments.
-        const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || process.env.API_KEY;
+        // In a Vite-based browser app, environment variables are exposed on import.meta.env.
+        // Render.com and other hosting platforms can set VITE_GEMINI_API_KEY during the build.
+        const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
 
         if (!apiKey) {
+            console.error("VITE_GEMINI_API_KEY is not set. Make sure it's defined in your environment variables for services like Render.com.");
             throw new Error("error_api_key_not_set");
         }
         ai = new GoogleGenAI({ apiKey });
@@ -169,27 +171,98 @@ export async function generateCriteriaSuggestions(
     let config: any;
 
     if (criteriaType === 'specific') {
-        prompt = `Eres un asistente experto en el diseño de currículos educativos, especializado en la normativa LOMLOE de España.
+        // Use local curriculum data for Secondary Education as requested.
+        if (stage === 'Educación Secundaria') {
+            const subjectEntry = ASIGNATURAS_POR_ETAPA.secundaria.find(s => s.label === subject);
+            const subjectValue = subjectEntry ? subjectEntry.value : null;
 
-        **Contexto:**
-        - **Etapa Educativa:** ${stage}
-        - **Asignatura:** ${subject}
-        - **Curso:** ${course}
-        - **Elemento a evaluar:** ${evaluationElement}
+            const courseNumMatch = course.match(/\d+/);
+            const courseNumber = courseNumMatch ? parseInt(courseNumMatch[0], 10) : 0;
+            
+            // Type guard to ensure we can index CURRICULUM_DATA.secundaria
+            // FIX: Using an intersection with `string` on the keyof type ensures that the type predicate is valid,
+            // as `keyof` on a string-indexed type can return `string | number`.
+            const isKnownSubject = (s: string | null): s is (keyof typeof CURRICULUM_DATA.secundaria & string) => {
+              return s !== null && s in CURRICULUM_DATA.secundaria;
+            }
 
-        **Tarea:**
-        Tu tarea es buscar en la web, utilizando fuentes oficiales del gobierno de España (como educagob.educacionfpydeportes.gob.es o boletines oficiales), los **Criterios de Evaluación** oficiales del currículo LOMLOE para la asignatura y etapa especificadas.
-        Una vez encontrados, selecciona los 4 o 5 criterios más relevantes para evaluar un "${evaluationElement}".
+            if (isKnownSubject(subjectValue) && courseNumber > 0) {
+                const subjectData = CURRICULUM_DATA.secundaria[subjectValue];
+                const availableGradeKeys = Object.keys(subjectData);
 
-        **IMPORTANTE:** Tu respuesta DEBE ser únicamente un array JSON válido que contenga strings. No incluyas texto introductorio, explicaciones, ni \`\`\`json markdown. Solo el array.
-        Ejemplo de respuesta válida:
-        ["Criterio 1.1 completo y oficial.", "Criterio 2.3 completo y oficial."]`;
+                const gradeKey = availableGradeKeys.find(key => {
+                    const parts = key.split('-').map(Number);
+                    if (parts.length === 1) return courseNumber === parts[0];
+                    if (parts.length === 2) return courseNumber >= parts[0] && courseNumber <= parts[1];
+                    return false;
+                });
+
+                if (gradeKey && subjectData[gradeKey]) {
+                    const relevantCriteria = subjectData[gradeKey].map(c => `${c.criterio} ${c.descripcion}`);
+                    const criteriaList = relevantCriteria.join('\n - ');
+
+                    prompt = `Eres un asistente experto en el diseño de currículos educativos, especializado en la normativa LOMLOE de España.
+
+                    **Contexto:**
+                    - **Etapa Educativa:** ${stage}
+                    - **Asignatura:** ${subject}
+                    - **Curso:** ${course}
+                    - **Elemento a evaluar:** ${evaluationElement}
+
+                    **Tarea:**
+                    A partir de la siguiente lista de Criterios de Evaluación OFICIALES para la asignatura y curso indicados, selecciona los 4 o 5 criterios **MÁS RELEVANTES** para evaluar un "${evaluationElement}".
+
+                    **Lista de Criterios de Evaluación Disponibles:**
+                    - ${criteriaList}
+
+                    **IMPORTANTE:**
+                    1. Tu respuesta DEBE ser únicamente un array JSON válido que contenga los textos completos de los criterios que seleccionaste.
+                    2. No incluyas texto introductorio, explicaciones, ni \`\`\`json markdown. Solo el array JSON.
+                    3. Asegúrate de devolver el texto completo del criterio, incluyendo su numeración.
+
+                    Ejemplo de respuesta válida:
+                    ["1.1 Analizar conceptos y procesos biológicos...", "2.3 Valorar la contribución de la ciencia..."]`;
+                    
+                    const responseSchema = {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.STRING,
+                            description: "El texto completo de un criterio de evaluación seleccionado."
+                        }
+                    };
+
+                    config = {
+                      responseMimeType: 'application/json',
+                      responseSchema: responseSchema,
+                      temperature: 0.2,
+                    };
+                }
+            }
+        }
         
-        config = {
-          tools: [{googleSearch: {}}],
-          temperature: 0.5,
-        };
+        // Fallback to Google Search if local data isn't available or for other educational stages
+        if (!config) {
+            prompt = `Eres un asistente experto en el diseño de currículos educativos, especializado en la normativa LOMLOE de España.
 
+            **Contexto:**
+            - **Etapa Educativa:** ${stage}
+            - **Asignatura:** ${subject}
+            - **Curso:** ${course}
+            - **Elemento a evaluar:** ${evaluationElement}
+
+            **Tarea:**
+            Tu tarea es buscar en la web, utilizando fuentes oficiales del gobierno de España (como educagob.educacionfpydeportes.gob.es o boletines oficiales), los **Criterios de Evaluación** oficiales del currículo LOMLOE para la asignatura y etapa especificadas.
+            Una vez encontrados, selecciona los 4 o 5 criterios más relevantes para evaluar un "${evaluationElement}".
+
+            **IMPORTANTE:** Tu respuesta DEBE ser únicamente un array JSON válido que contenga strings. No incluyas texto introductorio, explicaciones, ni \`\`\`json markdown. Solo el array.
+            Ejemplo de respuesta válida:
+            ["Criterio 1.1 completo y oficial.", "Criterio 2.3 completo y oficial."]`;
+            
+            config = {
+              tools: [{googleSearch: {}}],
+              temperature: 0.5,
+            };
+        }
     } else { // criteriaType === 'evaluation'
         const typeDescription = 'Aspectos observables o destrezas generales, junto con una ponderación sugerida para cada uno.';
         const examples = 'Por ejemplo, para un debate podría ser: [{ "name": "Expresar opiniones de forma argumentada", "weight": 40 }, { "name": "Respetar el turno de palabra", "weight": 30 }, { "name": "Uso de vocabulario específico", "weight": 30 }].';
@@ -236,8 +309,10 @@ export async function generateCriteriaSuggestions(
         });
         
         let jsonText = response.text.trim();
-
-        if (criteriaType === 'specific') {
+        
+        // This regex is a fallback for when the API uses googleSearch and might include markdown.
+        // It should not be necessary when responseSchema is used with local data.
+        if (criteriaType === 'specific' && config.tools?.some(t => 'googleSearch' in t)) {
             const jsonMatch = jsonText.match(/(\[[\s\S]*\])/);
             if (jsonMatch && jsonMatch[1]) {
                 jsonText = jsonMatch[1];
