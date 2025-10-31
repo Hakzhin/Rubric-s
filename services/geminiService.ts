@@ -8,12 +8,17 @@ let ai: GoogleGenAI | null = null;
 
 function getAiClient(): GoogleGenAI {
     if (!ai) {
-        // In a Vite-based browser app, environment variables are exposed on import.meta.env.
-        // Render.com and other hosting platforms can set VITE_GEMINI_API_KEY during the build.
-        const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
+        // Vite-based apps use import.meta.env
+        const viteApiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
+
+        // The preview/dev environment might use process.env
+        // Check for existence of 'process' to avoid ReferenceError in browser
+        const processApiKey = typeof process !== 'undefined' ? process.env?.API_KEY : undefined;
+
+        const apiKey = viteApiKey || processApiKey;
 
         if (!apiKey) {
-            console.error("VITE_GEMINI_API_KEY is not set. Make sure it's defined in your environment variables for services like Render.com.");
+            console.error("API_KEY or VITE_GEMINI_API_KEY is not set.");
             throw new Error("error_api_key_not_set");
         }
         ai = new GoogleGenAI({ apiKey });
