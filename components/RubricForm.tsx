@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect } from 'react';
 import { ETAPAS_EDUCATIVAS, CURSOS_POR_ETAPA, ASIGNATURAS_POR_ETAPA } from '../constants';
 import { generateCriteriaSuggestions } from '../services/geminiService';
@@ -80,10 +81,13 @@ const CriteriaSection: React.FC<CriteriaSectionProps> = ({ title, criteria, onCr
                 <button type="button" onClick={handleAddItem} className="px-4 py-2 text-sm font-semibold text-white bg-slate-600 rounded-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:bg-slate-400" disabled={disabled}>{t('add')}</button>
             </div>
              <div className="mt-2 text-right">
-                <button type="button" onClick={handleSuggestClick} disabled={isSuggesting || disabled} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-100 rounded-md hover:bg-indigo-200 disabled:opacity-50 transition-colors">
-                    <GeminiIcon />
-                    {isSuggesting ? t('suggesting') : t('suggest_with_ai')}
-                </button>
+                <div className="flex justify-end items-center gap-3">
+                    <p className="text-xs text-slate-500 italic">{t('ai_suggestion_disclaimer')}</p>
+                    <button type="button" onClick={handleSuggestClick} disabled={isSuggesting || disabled} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-100 rounded-md hover:bg-indigo-200 disabled:opacity-50 transition-colors flex-shrink-0">
+                        <GeminiIcon />
+                        {isSuggesting ? t('suggesting') : t('suggest_with_ai')}
+                    </button>
+                </div>
                 {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
             </div>
         </div>

@@ -72,6 +72,7 @@ export const translations = {
     error_generating_rubric_from_service: 'No se pudo generar la rúbrica desde el servicio de IA.',
     error_getting_suggestions: 'Error al obtener sugerencias. La búsqueda en la web puede haber fallado.',
     error_generating_suggestions: 'No se pudieron generar las sugerencias.',
+    ai_suggestion_disclaimer: 'Las sugerencias de criterios pueden contener fallos.',
 
     // GeminiChat.tsx
     gemini_chat_title: 'Chatea con Gemini',
@@ -153,6 +154,7 @@ export const translations = {
     error_generating_rubric_from_service: 'Could not generate the rubric from the AI service.',
     error_getting_suggestions: 'Error getting suggestions. The web search may have failed.',
     error_generating_suggestions: 'Could not generate suggestions.',
+    ai_suggestion_disclaimer: 'Criteria suggestions may contain errors.',
 
     // GeminiChat.tsx
     gemini_chat_title: 'Chat with Gemini',
@@ -234,6 +236,7 @@ export const translations = {
     error_generating_rubric_from_service: "Impossible de générer la grille depuis le service d'IA.",
     error_getting_suggestions: 'Erreur lors de l\'obtention des suggestions. La recherche sur le web a peut-être échoué.',
     error_generating_suggestions: 'Impossible de générer les suggestions.',
+    ai_suggestion_disclaimer: 'Les suggestions de critères peuvent contenir des erreurs.',
     
     // GeminiChat.tsx
     gemini_chat_title: 'Discuter avec Gemini',
