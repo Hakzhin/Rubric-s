@@ -6,6 +6,7 @@ import { RubricForm } from './components/RubricForm';
 import { RubricDisplay } from './components/RubricDisplay';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { SavedRubrics } from './components/SavedRubrics';
+import { GeminiChat } from './components/GeminiChat';
 import { generateRubric } from './services/geminiService';
 import { saveRubricToStorage, type SavedRubric } from './utils/rubricStorage';
 import type { Rubric, FormData } from './types';
@@ -86,6 +87,9 @@ const App: React.FC = () => {
                 initialData={loadedFormData}
                 onReset={handleFormReset}
               />
+            </div>
+            <div className="mt-8">
+              <GeminiChat />
             </div>
           </div>
           <div className="mt-8">

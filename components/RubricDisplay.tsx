@@ -60,7 +60,6 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUp
   };
 
   const handleExportToExcel = () => {
-    // Since XLSX is loaded from a CDN, we access it from the window object.
     const XLSX = (window as any).XLSX;
     if (typeof XLSX === 'undefined') {
         console.error('XLSX library is not loaded.');
@@ -70,17 +69,33 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUp
 
     const currentRubric = isEditMode ? editedRubric : rubric;
     const reversedHeaders = [...currentRubric.scaleHeaders].reverse();
-    
-    // Create the worksheet data starting with an empty row for the title
-    const sheetData: (string | number)[][] = [[]];
+    const headerCount = reversedHeaders.length;
 
-    // Header row
-    const headerRow = [`${t('evaluation_item')} (% Ponderación)`, ...reversedHeaders.map(h => `${h.level.toUpperCase()} (${h.score})`)];
-    sheetData.push(headerRow);
+    // --- Color and Style Definitions from Image ---
+    const levelStyles: { [key: string]: { fill: string; font: string } } = {
+        'SOBRESALIENTE': { fill: '70AD47', font: 'FFFFFF' },
+        'NOTABLE':       { fill: 'A9D08E', font: '000000' },
+        'BIEN':          { fill: 'FFC000', font: '000000' },
+        'SUFICIENTE':    { fill: 'ED7D31', font: 'FFFFFF' },
+        'INSUFICIENTE':  { fill: 'FF0000', font: 'FFFFFF' },
+    };
+    const BORDER_STYLE = { style: "thin" as const, color: { rgb: "BFBFBF" } };
+    const ALL_BORDERS = { top: BORDER_STYLE, bottom: BORDER_STYLE, left: BORDER_STYLE, right: BORDER_STYLE };
 
-    // Data rows
+    // --- Data Preparation ---
+    const titleRow = [`Rúbrica de Evaluación: ${currentRubric.title}`, ...Array(headerCount).fill(null)];
+    const headerRow = [`Ítem de Evaluación (% Ponderación)`, ...reversedHeaders.map(h => `${h.level.toUpperCase()}\n(${h.score})`)];
+    const sheetData = [titleRow, headerRow];
+
     currentRubric.items.forEach(item => {
-        const row = [`${item.itemName} (${item.weight}%)`];
+        const criteriaNumbers = currentRubric.specificCriteria
+            .map(c => c.match(/^[\d.]+/)?.[0])
+            .filter(Boolean)
+            .join(' ');
+
+        const firstColText = `${item.itemName} (${item.weight}%)` + (criteriaNumbers ? `\n\n${criteriaNumbers}` : '');
+
+        const row = [firstColText];
         const reversedDescriptors = [...item.descriptors].reverse();
         reversedDescriptors.forEach(desc => {
             row.push(desc.description);
@@ -88,35 +103,87 @@ export const RubricDisplay: React.FC<RubricDisplayProps> = ({ rubric, onRubricUp
         sheetData.push(row);
     });
 
-    const ws = XLSX.utils.aoa_to_sheet(sheetData, {cellStyles: false});
-
-    // Add title in the first cell of the first row
-    ws['A1'] = { t: 's', v: currentRubric.title, s: { font: { sz: 16, bold: true } } };
-
-    // Merge the title cells
-    if (!ws['!merges']) ws['!merges'] = [];
-    ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: headerRow.length - 1 } });
+    // --- Worksheet Creation ---
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
     
-    // Set column widths for better readability
-    const columnWidths = headerRow.map((_, index) => ({
-        wch: index === 0 ? 40 : 35
-    }));
-    ws['!cols'] = columnWidths;
+    // --- Style Application ---
+    const range = XLSX.utils.decode_range(ws['!ref']!);
 
-    // Set text wrapping for all data cells for better readability
-    const range = XLSX.utils.decode_range(ws['!ref']);
-    for (let R = 2; R <= range.e.r; ++R) { // Start from row 2 (data rows)
-      for (let C = 0; C <= range.e.c; ++C) {
-        const cellRef = XLSX.utils.encode_cell({c: C, r: R});
-        if (ws[cellRef]) {
-          ws[cellRef].s = { alignment: { wrapText: true, vertical: 'top' } };
-        }
-      }
+    // Title Style (Row 0)
+    const titleCellRef = XLSX.utils.encode_cell({ r: 0, c: 0 });
+    if(ws[titleCellRef]) {
+        ws[titleCellRef].s = {
+            font: { sz: 12, bold: true, name: 'Calibri' },
+            alignment: { vertical: 'center' as const, horizontal: 'left' as const, indent: 1 },
+            fill: { fgColor: { rgb: "E9EAEC" }, patternType: 'solid' as const }
+        };
+    }
+    if (!ws['!merges']) ws['!merges'] = [];
+    ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: headerCount } });
+
+    // Header Styles (Row 1)
+    const itemHeaderCellRef = XLSX.utils.encode_cell({ r: 1, c: 0 });
+     if(ws[itemHeaderCellRef]) {
+        ws[itemHeaderCellRef].s = {
+            font: { sz: 11, bold: true, color: { rgb: "000000" }, name: 'Calibri' },
+            fill: { fgColor: { rgb: "BFBFBF" }, patternType: 'solid' as const },
+            alignment: { horizontal: 'center' as const, vertical: 'center' as const, wrapText: true },
+            border: ALL_BORDERS
+        };
     }
 
+    for (let C = 1; C <= headerCount; ++C) {
+        const cellRef = XLSX.utils.encode_cell({ r: 1, c: C });
+        const headerText = reversedHeaders[C-1].level.toUpperCase().trim();
+        const style = levelStyles[headerText] || { fill: 'D9D9D9', font: '000000' };
+        if(ws[cellRef]) {
+            ws[cellRef].s = {
+                font: { sz: 12, bold: true, color: { rgb: style.font }, name: 'Calibri' },
+                fill: { fgColor: { rgb: style.fill }, patternType: 'solid' as const },
+                alignment: { horizontal: 'center' as const, vertical: 'center' as const, wrapText: true },
+                border: ALL_BORDERS
+            };
+        }
+    }
+
+    // Data Row Styles (Row 2 onwards)
+    for (let R = 2; R <= range.e.r; ++R) {
+        const firstColCellRef = XLSX.utils.encode_cell({ r: R, c: 0 });
+        if(ws[firstColCellRef]) {
+            ws[firstColCellRef].s = {
+                font: { sz: 11, bold: true, name: 'Calibri', color: { rgb: "000000" } },
+                fill: { fgColor: { rgb: "F2F2F2" }, patternType: 'solid' as const },
+                alignment: { vertical: 'top' as const, horizontal: 'left' as const, wrapText: true },
+                border: ALL_BORDERS
+            };
+        }
+        for (let C = 1; C <= headerCount; ++C) {
+            const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+            if (ws[cellRef]) {
+              ws[cellRef].s = {
+                  font: { sz: 11, name: 'Calibri' },
+                  alignment: { vertical: 'top' as const, horizontal: 'left' as const, wrapText: true },
+                  border: ALL_BORDERS,
+                  fill: { fgColor: { rgb: "DDEBF7" }, patternType: 'solid' as const }
+              };
+            }
+        }
+    }
+    
+    // --- Dimensions ---
+    ws['!cols'] = [
+      { wch: 35 }, 
+      ...Array(headerCount).fill({ wch: 45 })
+    ];
+    ws['!rows'] = [
+        { hpx: 25 }, 
+        { hpx: 60 }, 
+        ...currentRubric.items.map(() => ({ hpx: 150 }))
+    ];
+
+    // --- Workbook Creation & Download ---
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Rúbrica');
-
     const fileName = `${currentRubric.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };

@@ -43,14 +43,12 @@ export const GeminiChat: React.FC = () => {
       setMessages([...newMessages, { role: 'model', text: response }]);
     } catch (err) {
       console.error(err);
-      if (err instanceof Error) {
-        const key = err.message as TranslationKey;
-        const translatedError = t(key);
-        setError(translatedError === key ? t('gemini_chat_error') : translatedError);
-      } else {
-        setError(t('gemini_chat_error'));
-      }
-      // Revert user message on error
+      const errorMessageKey = (err instanceof Error ? err.message : 'gemini_chat_error') as TranslationKey;
+      const translatedError = t(errorMessageKey);
+      
+      setError(translatedError === errorMessageKey ? t('gemini_chat_error') : translatedError);
+      
+      // Revert user message on error so they can try again
       setMessages(messages);
     } finally {
       setIsLoading(false);
@@ -58,7 +56,7 @@ export const GeminiChat: React.FC = () => {
   };
 
   return (
-    <div className="bg-white/50 border border-slate-200 rounded-lg shadow-sm">
+    <div className="bg-slate-100 rounded-lg shadow-lg border border-slate-200">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -68,7 +66,7 @@ export const GeminiChat: React.FC = () => {
         <div className="flex items-center gap-3">
           <ChatBubbleIcon />
           <div>
-            <h3 className="font-semibold text-slate-700">{t('gemini_chat_title')}</h3>
+            <h3 className="font-semibold text-slate-800">{t('gemini_chat_title')}</h3>
             <p className="text-sm text-slate-500">{t('gemini_chat_description')}</p>
           </div>
         </div>
@@ -79,23 +77,23 @@ export const GeminiChat: React.FC = () => {
         <div className="p-4 border-t border-slate-200 animate-fade-in">
           <div ref={chatContainerRef} className="h-64 overflow-y-auto bg-slate-50 rounded-md p-3 space-y-4 mb-3 border border-slate-200">
             {messages.map((msg, index) => (
-              <div key={index} className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                {msg.role === 'model' && <div className="flex-shrink-0"><GeminiIcon /></div>}
-                <div className={`max-w-md p-3 rounded-lg ${msg.role === 'user' ? 'bg-indigo-500 text-white' : 'bg-white text-slate-800 shadow-sm'}`}>
+              <div key={index} className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'items-start'}`}>
+                {msg.role === 'model' && <div className="flex-shrink-0 text-indigo-600 mt-1.5"><GeminiIcon /></div>}
+                <div className={`max-w-md p-3 rounded-lg ${msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-800 shadow-sm border border-slate-200'}`}>
                   <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
                 </div>
               </div>
             ))}
             {isLoading && (
-              <div className="flex items-center gap-2">
-                <div className="flex-shrink-0"><GeminiIcon /></div>
+              <div className="flex items-center gap-2.5">
+                <div className="flex-shrink-0 text-indigo-600 mt-1.5"><GeminiIcon /></div>
                 <div className="flex items-center gap-2 text-sm text-slate-500">
                   <LoadingSpinner className="h-5 w-5 text-indigo-500" />
                   <span>{t('gemini_chat_thinking')}</span>
                 </div>
               </div>
             )}
-             {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+             {error && <p className="text-sm text-red-600 text-center py-2">{error}</p>}
           </div>
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
             <input
@@ -110,6 +108,7 @@ export const GeminiChat: React.FC = () => {
               type="submit"
               disabled={isLoading || !userInput.trim()}
               className="p-2.5 text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300 disabled:cursor-not-allowed"
+              aria-label="Send message"
             >
               <SendIcon />
             </button>

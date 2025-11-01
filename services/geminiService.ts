@@ -353,7 +353,6 @@ export async function generateCriteriaSuggestions(
     }
 }
 
-// FIX: Add generateChatResponse function to be used by the GeminiChat component.
 export async function generateChatResponse(prompt: string): Promise<string> {
     try {
         const aiClient = getAiClient();
