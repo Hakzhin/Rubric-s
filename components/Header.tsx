@@ -9,7 +9,7 @@ export const Header: React.FC = () => {
       <div className="flex justify-center items-center gap-4">
         <GraduationCapIcon className="h-20 w-20 md:h-24 md:w-24 text-white" />
         <h1 className="font-bold text-white flex items-baseline gap-2">
-          <span className="text-5xl md:text-6xl">
+          <span className="text-4xl md:text-5xl">
             Rubric<span className="text-sky-300">@</span>s
           </span>
           <span className="text-5xl md:text-6xl">
