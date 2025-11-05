@@ -12,12 +12,12 @@ export const Header: React.FC = () => {
           <span className="text-5xl md:text-6xl">
             Rubric<span className="text-sky-300">@</span>s
           </span>
-          <span className="text-4xl md:text-5xl">
+          <span className="text-6xl md:text-7xl">
             <span className="text-red-500">E</span>
             <span className="text-blue-400">B</span>
             <span className="inline-flex items-start">
               <span className="text-yellow-400">P</span>
-              <sup className="text-white text-xl font-semibold ml-1 leading-none">beta</sup>
+              <sup className="text-white text-2xl font-semibold ml-1 leading-none">beta</sup>
             </span>
           </span>
         </h1>
