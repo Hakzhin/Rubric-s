@@ -115,7 +115,7 @@ const App: React.FC = () => {
         </div>
       </main>
       <footer className="text-center p-4 text-slate-400 text-sm no-print">
-        <p>{t('developed_by')}</p>
+        <p>© 2025 Rubric@s. Todos los derechos reservados.</p>
       </footer>
     </div>
   );
